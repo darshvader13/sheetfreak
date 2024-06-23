@@ -28,7 +28,12 @@ export default function Home() {
         })
       })
       const new_url = await res.json()
-      router.push(`/act?link=${encodeURIComponent(new_url.data)}`)
+      if (new_url.data.startsWith("Please")) {
+        setInvalidMessage(new_url.data)
+      } else {
+        router.push(`/act?link=${encodeURIComponent(new_url.data)}`)
+      }
+      
     } else {
       setInvalidMessage("Please enter a valid Google Sheets share link and make sure it's set to 'Anyone with the link can view'!")
     }
