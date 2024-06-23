@@ -804,13 +804,14 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
     
     instructions = get_instructions(sheet_content, task_prompt)
     print("Got instructions", instructions)
-    yield f"Formulated instructions:\n{instructions}"
+    printinstrs = [f"{instr[1]}" for instr in instructions]
+    yield f"Formulated instructions: {printinstrs}"
 
     chat_response = ""
     
     for instruction in instructions:
         print("Executing", instruction)
-        yield f"Executing...\n{instruction}"
+        yield f"Executing...\n{instruction[1]}\n"
         instruction_type = instruction[0]
         instruction_command = instruction[1]
         if instruction_type == "READ":
