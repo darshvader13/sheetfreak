@@ -191,7 +191,7 @@ def ingest(req: dict):
         return "Please provide a valid Google Sheets share link and select 'Anyone with the link can view'!"
     
 def update_table(table, rows, columns, values):
-    """Update the table"""
+    """Update the table at the given rows and columns to the given values"""
     import pandas as pd
 
     if len(rows) != len(columns) or len(columns) != len(values):
@@ -209,6 +209,8 @@ def update_table(table, rows, columns, values):
     if maxCols >= currCols:
         for i in range(currCols, maxCols+1):
             table[i] = [pd.NA for j in range(currRows)]
+
+    #Make updates
     n = len(rows)
     for i in range(n):
         print(f"Setting {rows[i]}, {columns[i]} to {values[i]}")
