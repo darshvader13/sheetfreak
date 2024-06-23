@@ -10,6 +10,7 @@ export default function Home() {
   const [isValidUrl, setIsValidUrl] = useState(false)
   const router = useRouter()
   const [invalidMessage, setInvalidMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputUrl = e.target.value
@@ -20,6 +21,7 @@ export default function Home() {
   }
 
   async function onSubmit() {
+    setIsLoading(true)
     if (isValidUrl) {
       const res = await fetch('/api/getfreaky', {
         method: 'POST',
@@ -30,12 +32,14 @@ export default function Home() {
       const new_url = await res.json()
       if (new_url.data.startsWith("Please")) {
         setInvalidMessage(new_url.data)
+        setIsLoading(false)
       } else {
         router.push(`/act?link=${encodeURIComponent(new_url.data)}`)
       }
       
     } else {
       setInvalidMessage("Please enter a valid Google Sheets share link and make sure it's set to 'Anyone with the link can view'!")
+      setIsLoading(false)
     }
   }
 
@@ -53,6 +57,10 @@ export default function Home() {
         onClick={onSubmit}
       >Get freaky!</Button>
       <p>{invalidMessage}</p>
+      <div>{
+        isLoading && <div><h3>Loading...</h3>
+          </div>
+      }</div>
     </div>
   )
 }
