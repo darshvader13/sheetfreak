@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
     text: string;
@@ -70,7 +72,7 @@ export default function Act() {
                 display: 'inline-block'
               }}
             >
-              {message.text}
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
             </span>
           </div>
         ))}
@@ -86,7 +88,6 @@ export default function Act() {
         />
         <Button
             onClick={handleSendMessage}
-            className=""
         >
           Send
         </Button>

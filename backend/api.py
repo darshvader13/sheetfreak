@@ -583,8 +583,8 @@ def question_instruction(table, instruction, creds, sheet_id):
     question_instruction_tool_calls = question_instruction_table_response.choices[0].message.tool_calls
 
     for i in range(len(question_instruction_tool_calls)):
-        question_instruction_args = json.loads(question_instruction_tool_calls[i].function.arguments)
-        question_instruction_body = json.loads(question_instruction_args['answer'])
+        question_instruction_args = question_instruction_tool_calls[i].function.arguments
+        question_instruction_body = json.loads(question_instruction_args)['answer']
         print("Finished operation", question_instruction_body)
         return question_instruction_body
     return "Success"
@@ -627,8 +627,8 @@ def other_instruction(table, instruction, creds, sheet_id):
 
                 sheets_service = build("sheets", "v4", credentials=creds)
                 for i in range(len(other_instruction_tool_calls)):
-                    other_instruction_args = json.loads(other_instruction_tool_calls[i].function.arguments)
-                    other_instruction_body = json.loads(other_instruction_args['body'])
+                    other_instruction_args = other_instruction_tool_calls[i].function.arguments
+                    other_instruction_body = json.loads(other_instruction_args)['body']
                     print(other_instruction_body)
                     other_instruction_response = sheets_service.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body=other_instruction_body).execute()
                     print("Finished operation", other_instruction_response)
@@ -657,6 +657,8 @@ def chart_instruction(table, instruction, creds, sheet_id):
 
     client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
 
+    format_arguments = lambda x: json.loads(x) if type(x)==str else x
+
     prev_response = None
     failed = True
     for attempt_num in range(MAX_ATTEMPTS):
@@ -680,17 +682,42 @@ def chart_instruction(table, instruction, creds, sheet_id):
 
                 sheets_service = build("sheets", "v4", credentials=creds)
                 for i in range(len(create_instruction_tool_calls)):
-                    create_instruction_args = json.loads(create_instruction_tool_calls[i].function.arguments)
-                    create_instruction_body = json.loads(create_instruction_args['arguments'])
-                    print(create_instruction_body)
-                    chart_instruction_response = sheets_service.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body=create_instruction_body).execute()
+                    create_instruction_args = create_instruction_tool_calls[i].function.arguments
+                    message_content_list = json.loads(create_instruction_args)['arguments']
+
+                    create_chart_format = {
+                        "requests": [
+                            {
+                            "addChart": {
+                                "chart": {
+                                "spec": {
+                                    "title": message_content_list[0],
+                                    
+                                    "basicChart": {
+                                    "chartType": message_content_list[1],
+                                    "legendPosition": message_content_list[2],
+                                    "axis": format_arguments(message_content_list[3]),
+                                    "domains": format_arguments(message_content_list[4]),
+                                    "series": format_arguments(message_content_list[5]),
+                                    }
+                                },
+                                "position": format_arguments(message_content_list[6]),
+                                }
+                            }
+                            }
+                        ]
+                    }
+
+                    print(create_chart_format)
+                    chart_instruction_response = sheets_service.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body=create_chart_format).execute()
                     print("Finished operation", chart_instruction_response)
                 
                 failed = False
                 break
             
-            except:
+            except Exception as e:
                 print("Failed attempt.")
+                print(e)
 
     return not failed
 
