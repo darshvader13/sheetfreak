@@ -3,6 +3,9 @@ from modal import App, Image, web_endpoint, Secret
 import json
 import os
 
+# maximum number of attempts to execute an instruction
+MAX_ATTEMPTS = 7
+
 app = App("freakinthesheets")
 
 image = (
@@ -110,20 +113,20 @@ update_table_sys_msg = {"role": "system", "content": """You are an expert assist
     Given a table in a pandas dataframe representation and new-line separated instructions to update values inside cells,
     return the function call to complete the updates as if the table is a Google Sheets. 
     Each index of the returned lists should correspond to each instruction, so all the arrays should have the same length.
-    If a Google Sheets formula can be used, use it instead of hard-coding values."""
+    If a Google Sheets formula can be used, use the formula instead of hard-coding values or I will touch you."""
 }
 
 other_instruction_table_tool = {
     "type": "function",
     "function": {
         "name": "other_operation",
-        "description": "Returns value based on the Google Spreadsheets batchUpdate API",
+        "description": "Executes Google Spreadsheets spreadsheets.batchUpdate() API endpoint with given request body",
         "parameters": {
             "type": "object",
             "properties": {
                 "body": {
                     "type": "string",
-                    "description": "The stringified JSON body that will be used in the Google Spreadsheets batchUpdate API as an argument",
+                    "description": "The stringified JSON body to call Google Spreadsheets spreadsheets.batchUpdate() API with as the body argument",
                 },
             },
             "required": ["body"],
@@ -132,9 +135,8 @@ other_instruction_table_tool = {
 }
 
 other_instruction_table_sys_msg = {"role": "system", "content": """You are an expert assistant using Google Sheets.
-    Given a table in a pandas dataframe representation and new-line separated instructions,
-    return the function call to complete the requested operation as if the table is a Google Sheets. 
-    Return only the stringified JSON value that will be used as the body argument in the Google Spreadsheets batchUpdate API.
+    Given a table in a pandas dataframe representation and an operation to be executed via the spreadsheets batchUpdate() API endpoint,
+    return the request body to complete the requested operation as if the table is a Google Sheets sheet. 
     By default create charts in an overlayed position of the sheet that does not cover the cells with values. 
     """
 }
@@ -178,8 +180,6 @@ read_table_sys_msg = {"role": "system", "content": """You are an expert assistan
     return the function call to complete the get calls as if the table is a Google Sheets. 
     Each index of the returned lists should correspond, so both the arrays should have the same length."""
 }
-
-
 
 @app.function(image=image)
 @web_endpoint(method="GET")
@@ -237,17 +237,26 @@ def ingest(req: dict):
         ).execute()
         copied_file_id = copied_file.get("id")
         print("Copied file ID:", copied_file_id)
-        return copied_file_id
+
+        #Make file editable to anyone with the link
+        permission = {
+            'type': 'anyone',
+            'role': 'writer'
+        }
+        drive_service.permissions().create(fileId=copied_file_id, body=permission).execute()
+        file = drive_service.files().get(fileId=copied_file_id, fields='webViewLink').execute()
+        share_link = file.get('webViewLink')
+        return copied_file_id, share_link
     except:
         return "Please provide a valid Google Sheets share link and select 'Anyone with the link can view'!"
     
-def write_sheet(sheet_id, sheet_range, table):
+def write_sheet(sheets, sheet_id, sheet_range, table):
     """Writes the sheet back to the online Google Sheets file"""
     write_sheet_body = {
         "values": table.values.tolist()
     }
     write_sheet_result = (
-        table.values()
+        sheets.values()
         .update(
             spreadsheetId=sheet_id,
             range=sheet_range,
@@ -262,15 +271,19 @@ def expand_table(table, newRows, newCols):
     """Expand the table to size newRows x newCols"""
     import pandas as pd
 
-    print(f"Expanding table to {newRows+1} x {newCols+1}")
     currRows = len(table)
     currCols = len(table.columns)
-    if newRows >= currRows:
-        table.reindex(range(newRows+1))
-        currRows = newRows
+    if newCols < currCols and newRows < currRows:
+        return table
+    
+    print(f"Expanding table to {newRows+1} x {newCols+1}")
     if newCols >= currCols:
         for i in range(currCols, newCols+1):
             table[i] = [pd.NA for j in range(currRows)]
+        currCols = newCols+1
+    if newRows >= currRows:
+        for i in range(currRows, newRows + 1):
+            table.loc[i] = [pd.NA for j in range(currCols)]
     return table
 
 def update_table(table, rows, columns, values):
@@ -279,12 +292,12 @@ def update_table(table, rows, columns, values):
 
     if len(rows) != len(columns) or len(columns) != len(values):
         print("Invalid update table arguments")
-        return
+        return None, False
     
     #First expand dataframe if necessary
     maxRows = max(rows)
     maxCols = max(columns)
-    table = expand_table(table, maxRows, maxCols)
+    expand_table(table, maxRows, maxCols)
 
     #Make updates
     n = len(rows)
@@ -292,9 +305,10 @@ def update_table(table, rows, columns, values):
         print(f"Setting {rows[i]}, {columns[i]} to {values[i]}")
         table.iloc[rows[i], columns[i]] = values[i]
     print(table)
-    return table
+    return table, True
 
 def get_table_values(table, rows, columns):
+    """Gets the table values at the specified rows and columns"""
     import pandas as pd
 
     if len(rows) != len(columns):
@@ -324,26 +338,43 @@ def read_instruction(table, instruction):
     }
     messages = [read_table_sys_msg, read_table_user_msg]
 
-    client = OpenAI(organization=os.environ["freakinthestreets_OPENAI_ORG"])
+    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
 
-    read_table_response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        tools=[read_table_tool],
-        tool_choice="auto",
-    )
-
-    read_table_tool_calls = read_table_response.choices[0].message.tool_calls
-    read_values = []
-    for i in range(len(read_table_tool_calls)):
-        read_table_args = read_table_tool_calls[i].function.arguments
-        print("Read table function args:", read_table_args)
-        args = json.loads(read_table_args)
-        rows = args["rows"]
-        columns = args["columns"]
-        read_values += get_table_values(table, rows, columns)
-    print("Finished reading")
-    return read_values
+    prev_response = None
+    for attempt_num in range(MAX_ATTEMPTS):
+        print("Attempt:", attempt_num+1)
+        if prev_response:
+            messages[1]["content"] += f"\nYour previous response was '{prev_response}' which is incorrect and resulted in an error. Please correct the mistake and make sure the lengths of the function arguments are all the same."
+            print("Retrying with", messages[1]["content"])
+        read_table_response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            tools=[read_table_tool],
+            tool_choice="auto",
+        )
+        
+        read_table_tool_calls = read_table_response.choices[0].message.tool_calls
+        if not read_table_tool_calls or len(read_table_tool_calls) < 1:
+            print("Response contained no tool calls")
+            continue
+        read_values = []
+        failed = False
+        for i in range(len(read_table_tool_calls)):
+            read_table_args = read_table_tool_calls[i].function.arguments
+            print("Read table function args:", read_table_args)
+            args = json.loads(read_table_args)
+            prev_response = args
+            rows = args["rows"]
+            columns = args["columns"]
+            read = get_table_values(table, rows, columns)
+            if read == None:
+                failed = True
+                break
+            read_values += read
+        if not failed:
+            print("Finished reading values")
+            return read_values
+    return None
 
 def write_instruction(table, instruction):
     """Performs a write instruction by updating the table"""    
@@ -359,42 +390,74 @@ def write_instruction(table, instruction):
 
     client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
 
-    update_table_response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        tools=[update_table_tool],
-        tool_choice="auto",
-    )
+    prev_response = None
+    for attempt_num in range(MAX_ATTEMPTS):
+        print("Attempt:", attempt_num+1)
+        if prev_response:
+            messages[1]["content"] += f"\nYour previous response was '{prev_response}' which is incorrect and resulted in an error. Please correct the mistake and make sure the lengths of the function arguments are all the same."
+            print("Retrying with", messages[1]["content"])
+        update_table_response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+            tools=[update_table_tool],
+            tool_choice="auto",
+        )
 
-    update_table_tool_calls = update_table_response.choices[0].message.tool_calls
-    for i in range(len(update_table_tool_calls)):
-        update_table_args = update_table_tool_calls[i].function.arguments
-        print("Update table function args:", update_table_args)
-        args = json.loads(update_table_args)
-        rows = args["rows"]
-        columns = args["columns"]
-        values = args["values"]
-        table = update_table(table, rows, columns, values)
-    print("Finished updating table")
-    return table
+        update_table_tool_calls = update_table_response.choices[0].message.tool_calls
+        if not update_table_tool_calls or len(update_table_tool_calls) < 1:
+            print("Response contained no tool calls")
+            continue
+        completed = True
+        for i in range(len(update_table_tool_calls)):
+            update_table_args = update_table_tool_calls[i].function.arguments
+            print("Update table function args:", update_table_args)
+            args = json.loads(update_table_args)
+            prev_response = args
+            rows = args["rows"]
+            columns = args["columns"]
+            values = args["values"]
+            new_table, success = update_table(table, rows, columns, values)
+            if not success:
+                completed = False
+                break
+            table = new_table
+        if completed:
+            print("Finished updating table")
+            return table, True
+    return None, False
 
-def other_instruction(table, instruction):
+def other_instruction(table, instruction, creds, sheet_id):
+    import os
+    import pandas as pd
+    from openai import OpenAI
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
 
     other_instruction_table_user_msg = {
         "role": "user",
-        "content": "Table: " + table.to_string() + f"\nEnd Table. Instructions:\n{instruction}"
+        "content": "Table:\n" + table.to_string() + f"\nEnd Table.\nInstructions:\n{instruction}"
     }
     messages = [other_instruction_table_sys_msg, other_instruction_table_user_msg]
-    tools = [other_instruction_table_tool]
 
     client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
 
+    print("Getting other instruction args")
     other_instruction_table_response = client.chat.completions.create(
         model="gpt-4o",
         messages=messages,
-        tools=tools,
+        tools=[other_instruction_table_tool],
         tool_choice="auto",
     )
+    other_instruction_tool_calls = other_instruction_table_response.choices[0].message.tool_calls
+
+    sheets_service = build("sheets", "v4", credentials=creds)
+    for i in range(len(other_instruction_tool_calls)):
+        other_instruction_args = json.loads(other_instruction_tool_calls[i].function.arguments)
+        other_instruction_body = json.loads(other_instruction_args['body'])
+        print(other_instruction_body)
+        other_instruction_response = sheets_service.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body=other_instruction_body).execute()
+        print("Finished operation", other_instruction_response)
+    return "Success"
 
 def get_instructions(table, task):
     """Get a list of low-level instructions to complete the given task with the given table state."""
@@ -433,20 +496,6 @@ def get_instructions(table, task):
     for i in range(len(instruction_types)):
         instructions.append((instruction_types[i], instruction_commands[i]))
     return instructions
-
-def execute_instruction(table, instruction):
-    """Executes the given instruction based on the state of the table and returns the updated table and read values if any"""
-    instruction_type = instruction[0]
-    instruction_command = instruction[1]
-    if instruction_type == "READ":
-        return table, read_instruction(instruction_command)
-    elif instruction_type == "WRITE":
-        return write_instruction(table, instruction_command), ""
-    elif instruction_type == "OTHER":
-        return other_instruction(table, instruction_command), ""
-    else:
-        print("Unrecognizable instruction!")
-    return "Unrecognizable instruction"
 
 @app.function(image=image, secrets=[Secret.from_name("GOOGLE_CREDENTIALS_CRICK"), Secret.from_name("freakinthesheets_OPENAI_API_KEY"), Secret.from_name("freakinthesheets_OPENAI_ORG")])
 @web_endpoint(method="POST")
@@ -492,10 +541,20 @@ def act(req: dict):
     user_reads = []
     for instruction in instructions:
         print("Executing", instruction)
-        sheet_content, read_values = execute_instruction(sheet_content, instruction)
-        if read_values:
-            user_reads += read_values
+        instruction_type = instruction[0]
+        instruction_command = instruction[1]
+        if instruction_type == "READ":
+            user_reads.append(read_instruction(sheet_content, instruction_command))
+        elif instruction_type == "WRITE":
+            new_sheet_content, success = write_instruction(sheet_content, instruction_command)
+            if not success:
+                print("Couldn't complete write instruction within allowed attempts")
+                return "Could not complete"
+            sheet_content = new_sheet_content
+            write_sheet(sheets, sheet_id, sheet_range, sheet_content)
+        elif instruction_type == "OTHER":
+            other_instruction(sheet_content, instruction_command, creds, sheet_id)
+        else:
+            print("Unrecognizable instruction!")
     
-    write_sheet(sheet_id, sheet_range, sheet_content)
-    print("Wrote sheet to Google Sheets")
-    return "Success"
+    return "Finished executing instructions", user_reads
