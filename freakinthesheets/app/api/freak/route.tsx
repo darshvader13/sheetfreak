@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         console.log(task_prompt)
         console.log(sheet_id)
 
-        const response = await axios.post('https://kcui5--freakinthesheets-act-dev.modal.run', {
+        const response = await axios.post('https://kcui5--freakinthesheets-act.modal.run', {
             task_prompt: task_prompt,
             sheet_id: sheet_id,
         })

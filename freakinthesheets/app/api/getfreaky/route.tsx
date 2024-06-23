@@ -10,7 +10,7 @@ export async function POST(req: Request) {
         console.log("API received")
         console.log(user_url)
 
-        const response = await axios.post('https://kcui5--freakinthesheets-ingest-dev.modal.run', {
+        const response = await axios.post('https://kcui5--freakinthesheets-ingest.modal.run', {
             google_sheets_link: user_url,
         })
 
