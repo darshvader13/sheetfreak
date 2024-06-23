@@ -9,6 +9,7 @@ export default function Home() {
   const [url, setUrl] = useState('')
   const [isValidUrl, setIsValidUrl] = useState(false)
   const router = useRouter()
+  const [invalidMessage, setInvalidMessage] = useState('')
 
   const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
     const inputUrl = e.target.value
@@ -28,6 +29,8 @@ export default function Home() {
       })
       const new_url = await res.json()
       router.push(`/act?link=${encodeURIComponent(new_url.data)}`)
+    } else {
+      setInvalidMessage("Please enter a valid Google Sheets share link and make sure it's set to 'Anyone with the link can view'!")
     }
   }
 
@@ -44,6 +47,7 @@ export default function Home() {
       <Button
         onClick={onSubmit}
       >Get freaky!</Button>
+      <p>{invalidMessage}</p>
     </div>
   )
 }

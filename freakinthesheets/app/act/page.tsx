@@ -89,7 +89,7 @@ export default function Act() {
                 display: 'inline-block'
               }}
             >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+                {message.text}
             </span>
           </div>
         ))}
