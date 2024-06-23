@@ -573,21 +573,35 @@ def question_instruction(table, instruction, creds, sheet_id):
 
     client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
 
-    print("Getting question instruction args")
-    question_instruction_table_response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        tools=[question_tool],
-        tool_choice="required",
-    )
-    question_instruction_tool_calls = question_instruction_table_response.choices[0].message.tool_calls
+    prev_response = None
+    for attempt_num in range(MAX_ATTEMPTS):
+        print("Attempt:", attempt_num+1)
+        if prev_response:
+            messages[1]["content"] += f"\nYour previous response was '{prev_response}' which is incorrect and resulted in an error. Please correct the mistake and make sure the lengths of the function arguments are all the same."
+            print("Retrying with", messages[1]["content"])
+        else:
+            print("Getting question instruction args")
+            try:
+                question_instruction_table_response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=messages,
+                    tools=[question_tool],
+                    tool_choice="required",
+                )
+                question_instruction_tool_calls = question_instruction_table_response.choices[0].message.tool_calls
 
-    for i in range(len(question_instruction_tool_calls)):
-        question_instruction_args = question_instruction_tool_calls[i].function.arguments
-        question_instruction_body = json.loads(question_instruction_args)['answer']
-        print("Finished operation", question_instruction_body)
-        return question_instruction_body
-    return "Success"
+                for i in range(len(question_instruction_tool_calls)):
+                    question_instruction_args = question_instruction_tool_calls[i].function.arguments
+                    question_instruction_body = json.loads(question_instruction_args)['answer']
+                    print("Finished operation", question_instruction_body)
+                    return question_instruction_body
+                
+            except Exception as e:
+                print("Failed attempt")
+                print(e)
+
+    return 'Question failed. '
+
 
 def other_instruction(table, instruction, creds, sheet_id):
     import os
@@ -635,8 +649,9 @@ def other_instruction(table, instruction, creds, sheet_id):
                 failed = False
                 break
             
-            except:
+            except Exception as e:
                 print("Failed attempt")
+                print(e)
 
     return not failed
 
@@ -824,7 +839,6 @@ def act(req: dict):
             chat_response += "Sheet write successful. "
 
         elif instruction_type == "CHART":
-            #TODO KYLE use chart_instruction()
             chart_instruction_response = chart_instruction(sheet_content, instruction, creds, sheet_id)
             if chart_instruction_response:
                 chat_response += "Chart creation successful. "
