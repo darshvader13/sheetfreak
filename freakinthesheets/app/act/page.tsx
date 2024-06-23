@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import Link from 'next/link'
 
 interface Message {
     text: string;
@@ -68,8 +67,8 @@ export default function Act() {
 
   return (
     <div className="p-10">
-      <h1>Execute</h1>
-      <p>Google Sheets URL: {sheetsUrl}</p>
+      <h1 className="pb-4 pl-2 font-bold text-2xl">Let's get freaky in your sheets!</h1>
+      <p className="pb-4 pl-2">Google Sheets URL: <Link href={sheetsUrl} rel="noopener noreferrer" target="_blank" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">{sheetsUrl}</Link></p>
       
       <div ref={chatContainerRef}>
         {messages.map((message, index) => (
