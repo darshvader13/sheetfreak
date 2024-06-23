@@ -67,7 +67,7 @@ export default function Act() {
 
   return (
     <div className="p-10">
-      <h1 className="pb-4 pl-2 font-bold text-2xl">Let's get freaky in your sheets!</h1>
+      <h1 className="pb-4 pl-2 font-bold text-2xl">Let&apos;s get freaky in your sheets!</h1>
       <p className="pb-4 pl-2">Google Sheets URL: <Link href={sheetsUrl} rel="noopener noreferrer" target="_blank" className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">{sheetsUrl}</Link></p>
       
       <div ref={chatContainerRef}>
