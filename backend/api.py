@@ -37,7 +37,7 @@ get_instructions_tool = {
                     READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
                     WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
                     CHART involves creating only a basic chart (BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA). CHART also implictly reads and does not need to explicitly read values in.
-                    QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations.
+                    QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
                     OTHER involves Sheets operations that do not fit into READ, WRITE, CHART, or QUESTION operations, such as creating pivot tables or charts not listed in the CHART category (ex: pie chart). 
                     INAPPROPRIATE involves questions that are not relevant to Google Sheets at all. """,
                     
@@ -65,7 +65,7 @@ get_instructions_sys_msg = {"role": "system", "content": """You are an expert as
     READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
     WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
     CHART involves creating only a basic chart (BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA). CHART also implictly reads and does not need to explicitly read values in.
-    QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations.
+    QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
     OTHER involves operations that do not fit into READ, WRITE, CHART or QUESTION operations, such as creating pivot tables or charts not listed in the CHART category (ex: pie chart). 
     INAPPROPRIATE involves questions that are not relevant to Google Sheets at all.
     """
