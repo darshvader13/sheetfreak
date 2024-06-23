@@ -777,6 +777,7 @@ def get_instructions(table, task):
     return instructions
 
 def act_streamer(task_prompt, sheet_id, sheet_range):
+    import time
     try:
         from googleapiclient.discovery import build
         from google.oauth2.credentials import Credentials
@@ -804,8 +805,9 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
     
     instructions = get_instructions(sheet_content, task_prompt)
     print("Got instructions", instructions)
-    printinstrs = [f"{instr[1]}" for instr in instructions]
-    yield f"Formulated instructions: {printinstrs}"
+    printinstrs = " ".join([f"{instr[1]}" for instr in instructions])
+    yield f"Formulated instructions: {printinstrs} "
+    time.sleep(0.1)
 
     chat_response = ""
     
@@ -818,7 +820,9 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
             read = read_instruction(sheet_content, instruction_command)
             if read:
                 # chat_response += "The data you requested is: " + str(read) + ". "
-                yield f"The data you requested is:\n{str(read)}"
+                new_read = [s for s in read if s]
+                printread = ", ".join(new_read)
+                yield f"The data you requested is:\n{printread}"
             else:
                 return "Sheet read failed."
 
