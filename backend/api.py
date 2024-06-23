@@ -32,11 +32,13 @@ get_instructions_tool = {
                     },
                     "minItems": 1,
                     "maxItems": 100,
-                    "description": """One word instruction summary. Must be one of the following: READ, WRITE, QUESTION, or OTHER.
+                    "description": """One word instruction summary. Must be one of the following: READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
                     READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
-                    WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in. 
-                    QUESTION involves only questions about Sheets that do not require READ or WRITE operations.
-                    OTHER involves operations that do not fit into READ, WRITE, or QUESTION operations, such as creating tables or charts. """,
+                    WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
+                    CHART involves creating only a basic chart (BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA). CHART also implictly reads and does not need to explicitly read values in.
+                    QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations.
+                    OTHER involves Sheets operations that do not fit into READ, WRITE, CHART, or QUESTION operations, such as creating pivot tables or charts not listed in the CHART category (ex: pie chart). 
+                    INAPPROPRIATE involves questions that are not relevant to Google Sheets at all. """,
                     
                 },
                 "instructions": {
@@ -58,11 +60,13 @@ get_instructions_sys_msg = {"role": "system", "content": """You are an expert as
     Given new-line separated, potentially high-level tasks, 
     return the function call to break down the tasks into lower level instructions and their corresponding instruction types.
     Each index of the returned lists correspond, so both the arrays will have the same length.
-    The instruction types are READ, WRITE, QUESTION, and OTHER.
+    The instruction types are READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
     READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
-    WRITE involves changing and inserting cell values. WRITE also implictly reads. 
-    QUESTION involves only questions about Sheets that do not require READ or WRITE operations.
-    OTHER involves operations that do not fit into READ, WRITE, or QUESTION operations, such as creating tables or charts.
+    WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
+    CHART involves creating only a basic chart (BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA). CHART also implictly reads and does not need to explicitly read values in.
+    QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations.
+    OTHER involves operations that do not fit into READ, WRITE, CHART or QUESTION operations, such as creating pivot tables or charts not listed in the CHART category (ex: pie chart). 
+    INAPPROPRIATE involves questions that are not relevant to Google Sheets at all.
     """
 }
 
@@ -116,6 +120,135 @@ update_table_sys_msg = {"role": "system", "content": """You are an expert assist
     If a Google Sheets formula can be used, use the formula instead of hard-coding values or I will touch you."""
 }
 
+create_chart_tool = {
+    "type": "function",
+    "function": {
+        "name": "create_chart",
+        "description": "Creates chart",
+        "parameters": { 
+            "type": "object",
+            "properties": {
+                "arguments": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                    },
+                    "minItems": 7,
+                    "maxItems": 7,
+                    "description": """A list of 7 argument values for creating a basic chart using the Google Sheets Add Chart Request API. The arguments are:
+                    title (string), chartType (BasicChartType), legendPosition (BasicChartLegendPosition), axis (BasicChartAxis), domains (BasicChartDomain), series (BasicChartSeries), position (EmbeddedObjectPosition) 
+                    """,
+                    
+                }
+            },
+            "required": ["arguments"]
+        }
+    }
+}
+
+create_chart_sys_msg = {"role": "system", "content": """You are an expert assistant using Google Sheets.
+    Given a table in a pandas dataframe representation and a create basic chart operation to be executed via the spreadsheets batchUpdate() API endpoint,
+    return the list of exactly 7 specified arguments from the Google Sheets Add Chart Request API. 
+    Use the Google Sheets documentation to return the exact value and type needed for the API request.
+    By default, create charts in an overlayed position of the same sheet that does not cover the cells with values, unless user specifies otherwise.
+    chartType is an enum string value and can be BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA.
+    legendPosition is an enum string value and can be BOTTOM_LEGEND, LEFT_LEGEND, RIGHT_LEGEND, TOP_LEGEND, or NO_LEGEND.
+    Format of axis: [
+                {
+                  "position": "BOTTOM_AXIS",
+                  "title": "X-Axis Title"
+                },
+                {
+                  "position": "LEFT_AXIS",
+                  "title": "Y-Axis Title"
+                }
+              ]
+              
+    Format of domains: [
+                {
+                  "domain": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": _,
+                          "startRowIndex": _,
+                          "endRowIndex": _,
+                          "startColumnIndex": _,
+                          "endColumnIndex": _
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+              
+    Format of series: [
+                {
+                  "series": {
+                    "sourceRange": {
+                      "sources": [
+                        {
+                          "sheetId": _,
+                          "startRowIndex": _,
+                          "endRowIndex": _,
+                          "startColumnIndex": _,
+                          "endColumnIndex": _
+                        }
+                      ]
+                    }
+                  },
+                  "targetAxis": _,
+                  "color": {
+                    "red": _,
+                    "green": _,
+                    "blue": _
+                  }
+                }
+              ]
+              
+    Format of position: {
+            "overlayPosition": {
+              "anchorCell": {
+                "sheetId": _,
+                "rowIndex": _,
+                "columnIndex": _
+              },
+              "offsetXPixels": _,
+              "offsetYPixels": _,
+              "widthPixels": _,
+              "heightPixels": _
+            }
+          }
+    """
+}
+
+#test_chart_msg = {'role': 'user', 'content': 'Create a green line graph with column 1 on the X axis labeled Bettors and column 2 on the Y labeled Dollars Made'}
+
+question_tool = {
+    "type": "function",
+    "function": {
+        "name": "answer_question",
+        "description": "Answer question about Google Sheets",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "description": "The answer to question about Google Sheets",
+                },
+            },
+            "required": ["answer"],
+        },
+    },
+}
+
+question_sys_msg = {"role": "system", "content": """You are an expert assistant using Google Sheets.
+    Given a table in a pandas dataframe representation and a question regarding Google Sheets
+    return the function call to answer the question as if the table is a Google Sheets. """
+}
+
+#test_question_msg = {'role': 'user', 'content': 'What is a pivot table?'}
+
 other_instruction_table_tool = {
     "type": "function",
     "function": {
@@ -137,7 +270,6 @@ other_instruction_table_tool = {
 other_instruction_table_sys_msg = {"role": "system", "content": """You are an expert assistant using Google Sheets.
     Given a table in a pandas dataframe representation and an operation to be executed via the spreadsheets batchUpdate() API endpoint,
     return the request body to complete the requested operation as if the table is a Google Sheets sheet. 
-    By default create charts in an overlayed position of the sheet that does not cover the cells with values. 
     """
 }
 
@@ -178,7 +310,7 @@ read_table_tool = {
 read_table_sys_msg = {"role": "system", "content": """You are an expert assistant using Google Sheets.
     Given a table in a pandas dataframe representation and new-line separated instructions to get values inside cells,
     return the function call to complete the get calls as if the table is a Google Sheets. 
-    Each index of the returned lists should correspond, so both the arrays should have the same length."""
+    Each index of the returned lists correspond, so both the arrays will have the same length."""
 }
 
 @app.function(image=image)
@@ -246,7 +378,7 @@ def ingest(req: dict):
         drive_service.permissions().create(fileId=copied_file_id, body=permission).execute()
         file = drive_service.files().get(fileId=copied_file_id, fields='webViewLink').execute()
         share_link = file.get('webViewLink')
-        return copied_file_id, share_link
+        return share_link
     except:
         return "Please provide a valid Google Sheets share link and select 'Anyone with the link can view'!"
     
@@ -350,7 +482,7 @@ def read_instruction(table, instruction):
             model="gpt-4o",
             messages=messages,
             tools=[read_table_tool],
-            tool_choice="auto",
+            tool_choice="required",
         )
         
         read_table_tool_calls = read_table_response.choices[0].message.tool_calls
@@ -400,7 +532,7 @@ def write_instruction(table, instruction):
             model="gpt-4o",
             messages=messages,
             tools=[update_table_tool],
-            tool_choice="auto",
+            tool_choice="required",
         )
 
         update_table_tool_calls = update_table_response.choices[0].message.tool_calls
@@ -426,6 +558,37 @@ def write_instruction(table, instruction):
             return table, True
     return None, False
 
+def question_instruction(table, instruction, creds, sheet_id):
+    import os
+    import pandas as pd
+    from openai import OpenAI
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
+
+    question_instruction_table_user_msg = {
+        "role": "user",
+        "content": "Table:\n" + table.to_string() + f"\nEnd Table.\nInstructions:\n{instruction}"
+    }
+    messages = [question_sys_msg, question_instruction_table_user_msg]
+
+    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
+
+    print("Getting question instruction args")
+    question_instruction_table_response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=messages,
+        tools=[question_tool],
+        tool_choice="required",
+    )
+    question_instruction_tool_calls = question_instruction_table_response.choices[0].message.tool_calls
+
+    for i in range(len(question_instruction_tool_calls)):
+        question_instruction_args = json.loads(question_instruction_tool_calls[i].function.arguments)
+        question_instruction_body = json.loads(question_instruction_args['answer'])
+        print("Finished operation", question_instruction_body)
+        return question_instruction_body
+    return "Success"
+
 def other_instruction(table, instruction, creds, sheet_id):
     import os
     import pandas as pd
@@ -441,23 +604,96 @@ def other_instruction(table, instruction, creds, sheet_id):
 
     client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
 
-    print("Getting other instruction args")
-    other_instruction_table_response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        tools=[other_instruction_table_tool],
-        tool_choice="auto",
-    )
-    other_instruction_tool_calls = other_instruction_table_response.choices[0].message.tool_calls
+    prev_response = None
+    failed = True
+    for attempt_num in range(MAX_ATTEMPTS):
+        print("Attempt:", attempt_num+1)
 
-    sheets_service = build("sheets", "v4", credentials=creds)
-    for i in range(len(other_instruction_tool_calls)):
-        other_instruction_args = json.loads(other_instruction_tool_calls[i].function.arguments)
-        other_instruction_body = json.loads(other_instruction_args['body'])
-        print(other_instruction_body)
-        other_instruction_response = sheets_service.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body=other_instruction_body).execute()
-        print("Finished operation", other_instruction_response)
-    return "Success"
+        if prev_response:
+            messages[1]["content"] += f"\nYour previous response was '{prev_response}' which is incorrect and resulted in an error. Please correct the mistake and make sure the lengths of the function arguments are all the same."
+            print("Retrying with", messages[1]["content"])
+
+        else:
+            print("Getting other instruction args")
+
+            try:
+                other_instruction_table_response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=messages,
+                    tools=[other_instruction_table_tool],
+                    tool_choice="required",
+                )
+                other_instruction_tool_calls = other_instruction_table_response.choices[0].message.tool_calls
+
+                sheets_service = build("sheets", "v4", credentials=creds)
+                for i in range(len(other_instruction_tool_calls)):
+                    other_instruction_args = json.loads(other_instruction_tool_calls[i].function.arguments)
+                    other_instruction_body = json.loads(other_instruction_args['body'])
+                    print(other_instruction_body)
+                    other_instruction_response = sheets_service.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body=other_instruction_body).execute()
+                    print("Finished operation", other_instruction_response)
+                failed = False
+                break
+            
+            except:
+                print("Failed attempt")
+
+    return not failed
+
+        
+
+def chart_instruction(table, instruction, creds, sheet_id):
+    import os
+    import pandas as pd
+    from openai import OpenAI
+    from google.oauth2.credentials import Credentials
+    from googleapiclient.discovery import build
+
+    chart_instruction_table_user_msg = {
+        "role": "user",
+        "content": "Table:\n" + table.to_string() + f"\nEnd Table.\nInstructions:\n{instruction}"
+    }
+    messages = [create_chart_sys_msg, chart_instruction_table_user_msg]
+
+    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
+
+    prev_response = None
+    failed = True
+    for attempt_num in range(MAX_ATTEMPTS):
+        print("Attempt:", attempt_num+1)
+
+        if prev_response:
+            messages[1]["content"] += f"\nYour previous response was '{prev_response}' which is incorrect and resulted in an error. Please correct the mistake and make sure the lengths of the function arguments are all the same."
+            print("Retrying with", messages[1]["content"])
+        else:
+            print("Getting chart instruction args")
+
+            try:
+                chart_instruction_table_response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=messages,
+                    tools=[create_chart_tool],
+                    tool_choice="required",
+                )
+
+                create_instruction_tool_calls = chart_instruction_table_response.choices[0].message.tool_calls
+
+                sheets_service = build("sheets", "v4", credentials=creds)
+                for i in range(len(create_instruction_tool_calls)):
+                    create_instruction_args = json.loads(create_instruction_tool_calls[i].function.arguments)
+                    create_instruction_body = json.loads(create_instruction_args['arguments'])
+                    print(create_instruction_body)
+                    chart_instruction_response = sheets_service.spreadsheets().batchUpdate(spreadsheetId=sheet_id, body=create_instruction_body).execute()
+                    print("Finished operation", chart_instruction_response)
+                
+                failed = False
+                break
+            
+            except:
+                print("Failed attempt.")
+
+    return not failed
+
 
 def get_instructions(table, task):
     """Get a list of low-level instructions to complete the given task with the given table state."""
@@ -477,7 +713,7 @@ def get_instructions(table, task):
         model="gpt-4o",
         messages=messages,
         tools=[get_instructions_tool],
-        tool_choice="auto",
+        tool_choice="required",
     )
 
     get_instructions_tool_calls = get_instructions_response.choices[0].message.tool_calls
@@ -538,13 +774,19 @@ def act(req: dict):
     instructions = get_instructions(sheet_content, task_prompt)
     print("Got instructions", instructions)
 
-    user_reads = []
+    chat_response = ""
+    
     for instruction in instructions:
         print("Executing", instruction)
         instruction_type = instruction[0]
         instruction_command = instruction[1]
         if instruction_type == "READ":
-            user_reads.append(read_instruction(sheet_content, instruction_command))
+            read = read_instruction(sheet_content, instruction_command)
+            if read:
+                chat_response += "The data you requested is: " + str(read) + ". "
+            else:
+                return "Sheet read failed."
+
         elif instruction_type == "WRITE":
             new_sheet_content, success = write_instruction(sheet_content, instruction_command)
             if not success:
@@ -552,9 +794,29 @@ def act(req: dict):
                 return "Could not complete"
             sheet_content = new_sheet_content
             write_sheet(sheets, sheet_id, sheet_range, sheet_content)
+            chat_response += "Sheet write successful. "
+
+        elif instruction_type == "CHART":
+            #TODO KYLE use chart_instruction()
+            chart_instruction_response = chart_instruction(sheet_content, instruction, creds, sheet_id)
+            if chart_instruction_response:
+                chat_response += "Chart creation successful. "
+            else:
+                return "Chart creation failed."
+
         elif instruction_type == "OTHER":
-            other_instruction(sheet_content, instruction_command, creds, sheet_id)
+            other_instruction_response = other_instruction(sheet_content, instruction_command, creds, sheet_id)
+            if other_instruction_response:
+                chat_response += "Instruction successful. "
+            else:
+                return "Instruction failed."
+
+        elif instruction_type == "QUESTION":
+            chat_response += question_instruction(sheet_content, instruction_command, creds, sheet_id)
+
+        elif instruction_type == "INAPPROPRIATE":
+            chat_response += "This is irrelevant to Google Sheets. "
         else:
             print("Unrecognizable instruction!")
     
-    return "Finished executing instructions", user_reads
+    return "Finished executing instructions. " + chat_response
