@@ -13,13 +13,9 @@ interface Message {
 }
 
 export default function Act() {
-  const searchParams = useSearchParams();
-  const sheetsUrl = searchParams.get('link')
-  let sheetsId = ""
-  if (sheetsUrl) {
-    sheetsId = sheetsUrl.split('/')[5]
-  }
-  console.log(sheetsId)
+  const searchParams = useSearchParams()
+  const sheetsUrl = searchParams.get('link') ?? ''
+  const sheetsId = sheetsUrl.split('/')[5] || ''
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -44,7 +40,6 @@ export default function Act() {
             })
         })
         const results = await res.json()
-        console.log(results.data)
         setMessages(prevMessages => [...prevMessages, { text: results.data, sender: 'bot' }]);
     }
   }

@@ -27,7 +27,6 @@ export default function Home() {
         })
       })
       const new_url = await res.json()
-      console.log(new_url.data)
       router.push(`/act?link=${encodeURIComponent(new_url.data)}`)
     }
   }
