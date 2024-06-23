@@ -4,6 +4,7 @@ import { ChangeEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function Home() {
   const [url, setUrl] = useState('')
@@ -55,12 +56,8 @@ export default function Home() {
       
       <Button
         onClick={onSubmit}
-      >Get freaky!</Button>
+      >{isLoading ? <LoadingSpinner /> : 'Get freaky!'}</Button>
       <p>{invalidMessage}</p>
-      <div>{
-        isLoading && <div><h3>Loading...</h3>
-          </div>
-      }</div>
     </div>
   )
 }
