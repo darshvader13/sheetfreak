@@ -32,6 +32,7 @@ export default function Act() {
         setMessages([...messages, { text: inputMessage, sender: 'user' }]);
         setInputMessage('');
         
+        setMessages(prevMessages => [...prevMessages, { text: "Starting...", sender: 'bot' }]);
         const res = await fetch('/api/freak', {
             method: 'POST',
             body: JSON.stringify({
@@ -39,8 +40,29 @@ export default function Act() {
             sheet_id: sheetsId,
             })
         })
-        const results = await res.json()
-        setMessages(prevMessages => [...prevMessages, { text: results.data, sender: 'bot' }]);
+        const reader = res.body?.getReader();
+        const decoder = new TextDecoder('utf-8');
+
+        if (!reader) {
+            console.error('Stream reader not available');
+            return;
+        }
+
+        let done = false;
+
+        while (!done) {
+            const { value, done: readerDone } = await reader.read();
+            done = readerDone;
+
+            if (value) {
+                const chunk = decoder.decode(value, { stream: true });
+                console.log('Received chunk:', chunk);
+                setMessages(prevMessages => [...prevMessages, { text: chunk, sender: 'bot' }])
+            }
+        }
+        console.log("Done")
+        // const results = await res.json()
+        // setMessages(prevMessages => [...prevMessages, { text: results.data, sender: 'bot' }]);
     }
   }
 

@@ -1,4 +1,5 @@
 from modal import App, Image, web_endpoint, Secret
+from fastapi.responses import StreamingResponse
 
 import json
 import os
@@ -523,6 +524,7 @@ def write_instruction(table, instruction):
     client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
 
     prev_response = None
+    return_instructions = []
     for attempt_num in range(MAX_ATTEMPTS):
         print("Attempt:", attempt_num+1)
         if prev_response:
@@ -548,6 +550,7 @@ def write_instruction(table, instruction):
             rows = args["rows"]
             columns = args["columns"]
             values = args["values"]
+            return_instructions.append(f"Attempted writing {values} to rows {rows} and columns {columns}")
             new_table, success = update_table(table, rows, columns, values)
             if not success:
                 completed = False
@@ -555,8 +558,8 @@ def write_instruction(table, instruction):
             table = new_table
         if completed:
             print("Finished updating table")
-            return table, True
-    return None, False
+            return table, True, return_instructions
+    return None, False, return_instructions
 
 def question_instruction(table, instruction, creds, sheet_id):
     import os
@@ -654,8 +657,6 @@ def other_instruction(table, instruction, creds, sheet_id):
                 print(e)
 
     return not failed
-
-        
 
 def chart_instruction(table, instruction, creds, sheet_id):
     import os
@@ -775,20 +776,7 @@ def get_instructions(table, task):
         instructions.append((instruction_types[i], instruction_commands[i]))
     return instructions
 
-@app.function(image=image, secrets=[Secret.from_name("GOOGLE_CREDENTIALS_CRICK"), Secret.from_name("freakinthesheets_OPENAI_API_KEY"), Secret.from_name("freakinthesheets_OPENAI_ORG")])
-@web_endpoint(method="POST")
-def act(req: dict):
-    """Given the task prompt and sheet ID, execute the instructions"""
-    task_prompt: str = req["task_prompt"]
-    sheet_id: str = req["sheet_id"]
-    sheet_range = "Sheet1"
-
-    if not task_prompt:
-        return "Please provide a task!"
-    
-    if not sheet_id:
-        return "No sheet ID provided"
-    
+def act_streamer(task_prompt, sheet_id, sheet_range):
     try:
         from googleapiclient.discovery import build
         from google.oauth2.credentials import Credentials
@@ -808,6 +796,7 @@ def act(req: dict):
         sheet_content = read_sheet_result.get("values", [])
         sheet_content = pd.DataFrame(sheet_content)
         print("Read values:", sheet_content)
+        yield "Read in data..."
         
     except:
         print("Couldn't read values")
@@ -815,32 +804,37 @@ def act(req: dict):
     
     instructions = get_instructions(sheet_content, task_prompt)
     print("Got instructions", instructions)
+    yield f"Formulated instructions:\n{instructions}"
 
     chat_response = ""
     
     for instruction in instructions:
         print("Executing", instruction)
+        yield f"Executing...\n{instruction}"
         instruction_type = instruction[0]
         instruction_command = instruction[1]
         if instruction_type == "READ":
             read = read_instruction(sheet_content, instruction_command)
             if read:
-                chat_response += "The data you requested is: " + str(read) + ". "
+                # chat_response += "The data you requested is: " + str(read) + ". "
+                yield f"The data you requested is:\n{str(read)}"
             else:
                 return "Sheet read failed."
 
         elif instruction_type == "WRITE":
-            new_sheet_content, success = write_instruction(sheet_content, instruction_command)
+            new_sheet_content, success, instructions_wrote = write_instruction(sheet_content, instruction_command)
+            yield f"Attempted writing...\n{instructions_wrote}"
             if not success:
                 print("Couldn't complete write instruction within allowed attempts")
-                return "Could not complete"
+                return "Sheet write failed."
             sheet_content = new_sheet_content
             write_sheet(sheets, sheet_id, sheet_range, sheet_content)
             chat_response += "Sheet write successful. "
 
         elif instruction_type == "CHART":
-            chart_instruction_response = chart_instruction(sheet_content, instruction, creds, sheet_id)
+            chart_instruction_response = chart_instruction(sheet_content, instruction_command, creds, sheet_id)
             if chart_instruction_response:
+                yield f"Attempted making a chart with given schema..."
                 chat_response += "Chart creation successful. "
             else:
                 return "Chart creation failed."
@@ -848,16 +842,40 @@ def act(req: dict):
         elif instruction_type == "OTHER":
             other_instruction_response = other_instruction(sheet_content, instruction_command, creds, sheet_id)
             if other_instruction_response:
+                yield f"Attempted completing command\n{instruction_command}"
                 chat_response += "Instruction successful. "
             else:
                 return "Instruction failed."
 
         elif instruction_type == "QUESTION":
-            chat_response += question_instruction(sheet_content, instruction_command, creds, sheet_id)
+            question_res = question_instruction(sheet_content, instruction_command, creds, sheet_id)
+            yield question_res
 
         elif instruction_type == "INAPPROPRIATE":
             chat_response += "This is irrelevant to Google Sheets. "
+            yield f"Sorry I can't help with: {instruction_command}"
         else:
             print("Unrecognizable instruction!")
-    
+            
+    print("Finished ")
     return "Finished executing instructions. " + chat_response
+
+@app.function(image=image, secrets=[Secret.from_name("GOOGLE_CREDENTIALS_CRICK"), Secret.from_name("freakinthesheets_OPENAI_API_KEY"), Secret.from_name("freakinthesheets_OPENAI_ORG")])
+@web_endpoint(method="POST")
+def act(req: dict):
+    """Given the task prompt and sheet ID, execute the instructions"""
+    task_prompt: str = req["task_prompt"]
+    sheet_id: str = req["sheet_id"]
+    sheet_range = "Sheet1"
+
+    if not task_prompt:
+        return "Please provide a task!"
+    
+    if not sheet_id:
+        return "No sheet ID provided"
+    
+    return StreamingResponse(
+        act_streamer(task_prompt, sheet_id, sheet_range), media_type="text/event-stream"
+    )
+    
+    

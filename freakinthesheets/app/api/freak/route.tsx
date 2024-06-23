@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { StreamingTextResponse } from "ai"
 import axios from 'axios'
 
 export const maxDuration = 60
@@ -12,14 +13,29 @@ export async function POST(req: Request) {
         console.log(task_prompt)
         console.log(sheet_id)
 
+        //Production
         const response = await axios.post('https://kcui5--freakinthesheets-act.modal.run', {
             task_prompt: task_prompt,
             sheet_id: sheet_id,
+        }, {
+            responseType: 'stream',
         })
 
-        console.log("Received status: ")
-        console.log(response.data)
-        return NextResponse.json({ data: response.data }, { status: 200 })
+        //Development
+        // const response = await axios.post('https://kcui5--freakinthesheets-act-dev.modal.run', {
+        //     task_prompt: task_prompt,
+        //     sheet_id: sheet_id,
+        // }, {
+        //     responseType: 'stream',
+        // })
+        
+        const stream = response.data
+        return new StreamingTextResponse(stream)
+
+        // console.log("Received status: ")
+        // console.log(response.data)
+        // res.write("Starting")
+        // return NextResponse.json({ data: "Starting stream" }, { status: 200 })
     } catch(err) {
         console.log(err)
         return NextResponse.json({ data: "Error" }, { status: 500 })
