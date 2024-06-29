@@ -46,7 +46,7 @@ export default function Home() {
 
   return (
     <div className="p-10 space-y-4">
-      <h1 className="pb-4 pl-2 font-bold text-2xl">freakinthesheets</h1>
+      <h1 className="pb-4 pl-2 font-bold text-2xl">sheetfreak</h1>
       <Input
         type="text"
         value={url}

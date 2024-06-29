@@ -8,7 +8,7 @@ from function_calls import *
 # maximum number of attempts to execute an instruction
 MAX_ATTEMPTS = 7
 
-app = App("freakinthesheets")
+app = App("sheetfreak")
 
 image = (
     Image.debian_slim()
@@ -22,7 +22,7 @@ image = (
 @app.function(image=image)
 @web_endpoint(method="GET")
 def home():
-    return "freakinthesheets"
+    return "sheetfreak"
 
 def get_google_credentials(google_creds):
     """Return Google Credentials"""
@@ -64,7 +64,7 @@ def ingest(req: dict):
 
         DRIVE_FOLDER = "1LAEzfodH-7MUQcEZRJlifSXxkrSPhTUY"
         request_body = {
-            'name': user_sheets_title + ' w freakinthesheets',
+            'name': user_sheets_title + ' w sheetfreak',
             'parents': [DRIVE_FOLDER]
         }
 
