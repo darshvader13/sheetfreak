@@ -1,3 +1,13 @@
+"""
+Function calling tools
+- get_instructions
+- update_table
+- create_chart
+- question
+- other_instruction
+- read_table
+"""
+
 get_instructions_tool = {
     "type": "function",
     "function": {

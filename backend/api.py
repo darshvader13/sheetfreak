@@ -19,8 +19,6 @@ image = (
     .pip_install("pandas")
 )
 
-
-
 @app.function(image=image)
 @web_endpoint(method="GET")
 def home():
@@ -28,7 +26,6 @@ def home():
 
 def get_google_credentials(google_creds):
     """Return Google Credentials"""
-    from googleapiclient.discovery import build
     from google.oauth2.credentials import Credentials
     creds = Credentials(google_creds['token'],
                         refresh_token=google_creds['refresh_token'],
@@ -178,7 +175,7 @@ def read_instruction(table, instruction):
     }
     messages = [read_table_sys_msg, read_table_user_msg]
 
-    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
+    client = OpenAI(organization=os.environ["OPENAI_ORG"])
 
     prev_response = None
     for attempt_num in range(MAX_ATTEMPTS):
@@ -228,7 +225,7 @@ def write_instruction(table, instruction):
     }
     messages = [update_table_sys_msg, update_table_user_msg]
 
-    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
+    client = OpenAI(organization=os.environ["OPENAI_ORG"])
 
     prev_response = None
     return_instructions = []
@@ -281,7 +278,7 @@ def question_instruction(table, instruction, creds, sheet_id):
     }
     messages = [question_sys_msg, question_instruction_table_user_msg]
 
-    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
+    client = OpenAI(organization=os.environ["OPENAI_ORG"])
 
     prev_response = None
     for attempt_num in range(MAX_ATTEMPTS):
@@ -326,7 +323,7 @@ def other_instruction(table, instruction, creds, sheet_id):
     }
     messages = [other_instruction_table_sys_msg, other_instruction_table_user_msg]
 
-    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
+    client = OpenAI(organization=os.environ["OPENAI_ORG"])
 
     prev_response = None
     failed = True
@@ -378,7 +375,7 @@ def chart_instruction(table, instruction, creds, sheet_id):
     }
     messages = [create_chart_sys_msg, chart_instruction_table_user_msg]
 
-    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
+    client = OpenAI(organization=os.environ["OPENAI_ORG"])
 
     format_arguments = lambda x: json.loads(x) if type(x)==str else x
 
@@ -457,7 +454,7 @@ def get_instructions(table, task):
     }
     messages = [get_instructions_sys_msg, get_instructions_user_msg]
 
-    client = OpenAI(organization=os.environ["freakinthesheets_OPENAI_ORG"])
+    client = OpenAI(organization=os.environ["OPENAI_ORG"])
 
     get_instructions_response = client.chat.completions.create(
         model="gpt-4o",
@@ -572,7 +569,7 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
     print("Finished ")
     return "Finished executing instructions. " + chat_response
 
-@app.function(image=image, secrets=[Secret.from_name("GOOGLE_CREDENTIALS_CRICK"), Secret.from_name("freakinthesheets_OPENAI_API_KEY"), Secret.from_name("freakinthesheets_OPENAI_ORG")])
+@app.function(image=image, secrets=[Secret.from_name("GOOGLE_CREDENTIALS_CRICK"), Secret.from_name("sheetfreak_OPENAI_API_KEY"), Secret.from_name("sheetfreak_OPENAI_ORG")])
 @web_endpoint(method="POST")
 def act(req: dict):
     """Given the task prompt and sheet ID, execute the instructions"""

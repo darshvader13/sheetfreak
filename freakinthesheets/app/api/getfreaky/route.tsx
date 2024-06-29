@@ -11,12 +11,12 @@ export async function POST(req: Request) {
         console.log(user_url)
 
         //Production
-        const response = await axios.post('https://kcui5--freakinthesheets-ingest.modal.run', {
+        const response = await axios.post('https://sheetfreak--freakinthesheets-ingest.modal.run', {
             google_sheets_link: user_url,
         })
 
         //Development
-        // const response = await axios.post('https://kcui5--freakinthesheets-ingest-dev.modal.run', {
+        // const response = await axios.post('https://sheetfreak--freakinthesheets-ingest-dev.modal.run', {
         //     google_sheets_link: user_url,
         // })
         
