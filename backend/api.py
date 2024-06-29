@@ -36,7 +36,7 @@ def get_google_credentials(google_creds):
                         )
     return creds
 
-@app.function(image=image, secrets=[Secret.from_name("GOOGLE_CREDENTIALS_CRICK")])
+@app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK")])
 @web_endpoint(method="POST")
 def ingest(req: dict):
     """Copy the user given Google Sheets into local Google Drive and return local sheets ID"""
@@ -49,7 +49,7 @@ def ingest(req: dict):
         from googleapiclient.discovery import build
         from google.oauth2.credentials import Credentials
 
-        GOOGLE_CREDENTIALS_JSON = json.loads(os.environ["GOOGLE_CREDENTIALS_CRICK"])
+        GOOGLE_CREDENTIALS_JSON = json.loads(os.environ["GOOGLE_CREDS_CRICK"])
         creds = get_google_credentials(GOOGLE_CREDENTIALS_JSON)
         
         drive_service = build('drive', 'v3', credentials=creds)
@@ -488,7 +488,7 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
         import pandas as pd
         from openai import OpenAI
 
-        GOOGLE_CREDENTIALS_JSON = json.loads(os.environ["GOOGLE_CREDENTIALS_CRICK"])
+        GOOGLE_CREDENTIALS_JSON = json.loads(os.environ["GOOGLE_CREDS_CRICK"])
         creds = get_google_credentials(GOOGLE_CREDENTIALS_JSON)
 
         sheets_service = build("sheets", "v4", credentials=creds)
@@ -569,7 +569,7 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
     print("Finished ")
     return "Finished executing instructions. " + chat_response
 
-@app.function(image=image, secrets=[Secret.from_name("GOOGLE_CREDENTIALS_CRICK"), Secret.from_name("sheetfreak_OPENAI_API_KEY"), Secret.from_name("sheetfreak_OPENAI_ORG")])
+@app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK"), Secret.from_name("sheetfreak_OPENAI_API_KEY"), Secret.from_name("sheetfreak_OPENAI_ORG")])
 @web_endpoint(method="POST")
 def act(req: dict):
     """Given the task prompt and sheet ID, execute the instructions"""
