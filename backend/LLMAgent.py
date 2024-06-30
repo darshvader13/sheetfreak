@@ -28,6 +28,7 @@ tools = {
     "other_instruction"
 }
 
+# TODO: timeit measure latency of class methods
 class LLMAgent:
     """LLMAgent is the orchestrated agent responsible for making LLM calls to plan and produce instructions"""
 
@@ -39,16 +40,29 @@ class LLMAgent:
         self.default_claude_model = default_claude_model
         self.openai_client = None
         self.bedrock_client = None
-        self.initialized = False
-
-    def initialize_llm_clients(self):
-        """Initializes LLM clients to use"""
+        self.openai_client_initialized = False
         self.openai_client = OpenAI(organization=os.environ["OPENAI_ORG"])
+        self.openai_client_initialized = True
+        self.bedrock_client_initialized = False
         self.bedrock_client = boto3.client(service_name='bedrock-runtime', region_name='us-east-1',
                                 aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
                                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
                                 )
-        self.initialized = True
+        self.bedrock_client_initialized = True
+
+    def initialize_openai_client(self):
+        """Initializes LLM clients to use"""
+        self.openai_client = OpenAI(organization=os.environ["OPENAI_ORG"])
+        self.openai_client_initialized = True
+        print("Initialized OpenAI client")
+    
+    def initialize_bedrock_client(self):
+        self.bedrock_client = boto3.client(service_name='bedrock-runtime', region_name='us-east-1',
+                                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+                                )
+        self.bedrock_client_initialized = True
+        print("Initialized boto3 client")
     
     def set_tools_to_models(self, key, value):
         """Sets the model to use for the given tool"""
@@ -59,11 +73,12 @@ class LLMAgent:
             print("Invalid model!")
             return
         self.tools_to_models[key] = value
+        print("tools_to_models:", self.tools_to_models)
 
     def call_gpt(self, user_msg_content, tool_name):
         """Call GPT on OpenAI"""
-        if not self.initialized:
-            self.initialize_llm_clients()
+        if not self.openai_client_initialized:
+            self.initialize_openai_client()
 
         tool, sys_msg = gpt_tools["gpt_" + tool_name]
         user_msg = {
@@ -84,8 +99,8 @@ class LLMAgent:
     
     def call_claude(self, user_msg_content, tool_name):
         """Call Claude on AWS Bedrock"""
-        if not self.initialized:
-            self.initialize_llm_clients()
+        if not self.bedrock_client_initialized:
+            self.initialize_bedrock_client()
 
         tool, sys_msg = claude_tools["claude_" + tool_name]
         messages = [{"role": "user", "content": user_msg_content}]
@@ -98,11 +113,17 @@ class LLMAgent:
         })
         modelName = self.tools_to_models[tool_name] if tool_name in self.tools_to_models else self.default_claude_model
         modelID = claude_model_to_model_IDs[modelName]
-        
+
         response = self.bedrock_client.invoke_model(body=body, modelId=modelID)
         response_body = json.loads(response['body'].read())
         print(response_body['content'])
+
+    def act_streamer(self, task_prompt: str, sheet_content: str):
+        """Attempts to complete given task prompt and streams outputs"""
+
     
     def hi(self):
-        self.set_tools_to_models("create_chart", "gpt-3.5")
-        self.call_gpt("create a blue line graph of columns 1 to 10", "create_chart")
+        # self.set_tools_to_models("create_chart", "gpt-3.5")
+        # self.call_gpt("create a blue line graph of columns 1 to 10", "create_chart")
+        self.set_tools_to_models("create_chart", "claude-3.5")
+        self.call_claude("create a blue line graph of columns 1 to 10", "create_chart")

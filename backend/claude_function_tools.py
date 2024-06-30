@@ -20,7 +20,8 @@ claude_create_chart_tool = {
 
 claude_create_chart_sys_message = """You are an expert assistant using Google Sheets through the Google Sheets API.
 Given the specifications to make a graph using the Google Sheets API's spreadsheets batchUpdate() endpoint,
-return the correct argument to pass to the API to create a graph or chart based on the given specifications."""
+return the correct argument to pass to the API to create a graph or chart based on the given specifications.
+Set default values for any other parameter you need."""
 
 claude_tools = {
     "claude_create_chart": (claude_create_chart_tool, claude_create_chart_sys_message)
