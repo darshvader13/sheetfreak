@@ -178,14 +178,14 @@ class TableAgent:
                 vals = self.read_table(args)
                 return True, "", vals
             elif instruction_type == "CHART":
-                self.create_chart(args)
+                self.create_chart(args[0])
                 return True, "", "Created chart"
             elif instruction_type == "QUESTION":
-                return True, "", args
+                return True, "", args[0]
             elif instruction_type == "OTHER":
                 self.other_instruction(args)
                 return True, "", "Completed instruction"
             
         except Exception as e:
-            print("Exception", e)
-            return False, e, ""
+            print("Exception when attempting instruction:", e)
+            return False, str(e), ""

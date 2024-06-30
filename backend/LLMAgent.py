@@ -7,19 +7,6 @@ from claude_function_tools import *
 from openai import OpenAI
 import boto3
 
-# gpt_model_to_model_IDs = {
-#     # Must start with 'gpt'
-#     "gpt-4o": "gpt-4o",
-#     "gpt-4-turbo": "gpt-4-turbo",
-#     "gpt-4": "gpt-4",
-#     "gpt-3.5": "gpt-3.5-turbo",
-# }
-
-# claude_model_to_model_IDs = {
-#     # Must start with 'claude'
-#     "claude-3.5": "anthropic.claude-3-5-sonnet-20240620-v1:0",
-# }
-
 model_to_model_IDs = {
     "gpt-4o": "gpt-4o",
     "gpt-4-turbo": "gpt-4-turbo",
@@ -55,8 +42,6 @@ class LLMAgent:
         self.default_call = default_call # Either 'gpt' or 'claude'
         self.default_gpt_model = default_gpt_model
         self.default_claude_model = default_claude_model
-        # self.openai_client = None
-        # self.bedrock_client = None
         self.openai_client = OpenAI(organization=os.environ["OPENAI_ORG"])
         self.bedrock_client = boto3.client(service_name='bedrock-runtime', region_name='us-east-1',
                                 aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
@@ -68,7 +53,6 @@ class LLMAgent:
         if key not in tools:
             print("Invalid tool!")
             return
-        # if value not in gpt_model_to_model_IDs and value not in claude_model_to_model_IDs:
         if value not in model_to_model_IDs:
             print("Invalid model!")
             return
@@ -79,19 +63,13 @@ class LLMAgent:
         """Returns model ID to use for the given tool_name"""
         if tool_name in self.tools_to_models:
             model_name = self.tools_to_models[tool_name]
-            # if model_name.startswith("gpt"):
-            #     return gpt_model_to_model_IDs[model_name]
-            # elif model_name.startswith("claude"):
-            #     return claude_model_to_model_IDs[model_name]
             return model_to_model_IDs[model_name]
         else:
             if self.default_call == "gpt":
                 model_name = self.default_gpt_model
-                # return gpt_model_to_model_IDs[model_name]
                 return model_to_model_IDs[model_name]
             elif self.default_call == "claude":
                 model_name = self.default_claude_model
-                # return claude_model_to_model_IDs[model_name]
                 return model_to_model_IDs[model_name]
             else:
                 print("Could not find LLM model to use")
@@ -132,7 +110,7 @@ class LLMAgent:
         print(response_body['content'])
         return response_body['content']
 
-    def get_instruction_args(self, tool_name, task, sheet_content, args_names, prev_response="", prev_response_error=""):
+    def get_instruction_args(self, tool_name, task, sheet_content, args_names, prev_response, prev_response_error):
         """Gets instructions arguments.
         Returns success bool, error message, and args.
         """
@@ -141,7 +119,9 @@ class LLMAgent:
             user_msg += f"\nYour previous response was {prev_response} which resulted in an error."
         if prev_response_error:
             user_msg += f"\nThe error was: {prev_response_error}"
+        print("User message:", user_msg)
         model_ID = self.get_model_ID(tool_name)
+        print("Using model:", model_ID)
         if model_ID.startswith("gpt"):
             gpt_response = self.call_gpt(model_ID, user_msg, tool_name)
             tool_calls = gpt_response.tool_calls
@@ -162,7 +142,7 @@ class LLMAgent:
                         if len(args_collection[j]) != len(args_collection[j-1]):
                             print("Invalid instructions")
                             return False, "Invalid instructions length", instruction_args
-            if type(args_collection[0]) == str:
+            if tool_name != "get_instructions" and tool_name != "write_table" and tool_name != "read_table":
                 return True, "", args_collection
             assert(type(args_collection[0] == list))
             instruction_args = []
@@ -193,8 +173,14 @@ class LLMAgent:
     
     def act_streamer(self, task_prompt: str, sheet_id: str, sheet_range: str):
         """Attempts to complete given task prompt and streams outputs"""
-        table_agent = TableAgent(sheet_id)
-        sheet_content = table_agent.get_sheet_content(sheet_range)
+        try:
+            table_agent = TableAgent(sheet_id)
+            sheet_content = table_agent.get_sheet_content(sheet_range)
+            yield get_chunk_to_yield("Finished reading in data...")
+        except:
+            yield get_chunk_to_yield("Error reading data")
+            return
+        
         # 1. Get instructions
         prev_response = None
         prev_response_error = None
@@ -216,24 +202,26 @@ class LLMAgent:
                 print("Error in get_instructions")
                 continue
         print("Instructions:", instructions)
-        print_instructions = " ".join([f"{instr[1]}" for instr in instructions])
-        yield print_instructions
+        print_instructions = " ".join([instr[1] for instr in instructions])
+        yield get_chunk_to_yield(f"Plan: {print_instructions}")
+
+        if "INAPPROPRIATE" in [instr[0] for instr in instructions]:
+            yield get_chunk_to_yield(f"Sorry I can't help with: {task_prompt}")
+            return
 
         # 2. Execute instructions
         need_to_push_sheet_content = False
         for instruction in instructions:
             print("Executing", instruction)
-            yield f"Executing...\n{instruction[1]}"
+            yield get_chunk_to_yield(f"Executing...\n{instruction[1]}")
             prev_response = None
             prev_response_error = None
+            failed_all_attempts = True
             for attempt_num in range(1, self.max_attempts+1):
                 try:
                     instruction_type = instruction[0]
                     instruction_command = instruction[1]
                     print(f"Attempt {attempt_num} of {instruction_type}: {instruction_command}")
-                    if instruction_type == "INAPPROPRIATE":
-                        yield "Sorry I can't help with that..."
-                        break
                     if instruction_type not in instruction_type_to_tool_name:
                         print("Unrecognized instruction type")
                         break
@@ -253,11 +241,20 @@ class LLMAgent:
                         continue
                     if instruction_type == "WRITE":
                         need_to_push_sheet_content = True
-                    yield result
+                    yield get_chunk_to_yield(result)
+                    failed_all_attempts = False
                     break
                 except Exception as e:
                     prev_response = None
                     prev_response_error = None
                     continue
+            if failed_all_attempts:
+                yield get_chunk_to_yield("Failed instruction after all attempts")
+        yield get_chunk_to_yield("Finished executing all instructions.")
         if need_to_push_sheet_content:
             table_agent.push_sheet_content(sheet_range)
+            yield get_chunk_to_yield("Wrote to Google Sheets")
+        return
+
+def get_chunk_to_yield(chunk):
+    return chunk + " --END_CHUNK-- "

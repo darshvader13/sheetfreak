@@ -1,9 +1,9 @@
-from modal import App, Image, web_endpoint, Secret
-from fastapi.responses import StreamingResponse
-
 import json
 import os
 from function_calls import *
+
+from modal import App, Image, web_endpoint, Secret
+from fastapi.responses import StreamingResponse
 
 # maximum number of attempts to execute an instruction
 MAX_ATTEMPTS = 7
