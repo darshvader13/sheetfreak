@@ -36,6 +36,9 @@ def get_google_credentials(google_creds):
                         )
     return creds
 
+def get_chunk_to_yield(chunk):
+    return chunk + " --END_CHUNK-- "
+
 @app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK")])
 @web_endpoint(method="POST")
 def ingest(req: dict):
@@ -501,23 +504,24 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
         sheet_content = read_sheet_result.get("values", [])
         sheet_content = pd.DataFrame(sheet_content)
         print("Read values:", sheet_content)
-        yield "Read in data..."
+        yield get_chunk_to_yield("Read in data...")
         
     except:
         print("Couldn't read values")
-        return "Error"
+        yield get_chunk_to_yield("Error")
+        return
     
     instructions = get_instructions(sheet_content, task_prompt)
     print("Got instructions", instructions)
     printinstrs = " ".join([f"{instr[1]}" for instr in instructions])
-    yield f"Formulated instructions: {printinstrs} "
+    yield get_chunk_to_yield(f"Formulated instructions: {printinstrs} ")
     time.sleep(0.1)
 
     chat_response = ""
-    
+    print(len(instructions))
     for instruction in instructions:
         print("Executing", instruction)
-        yield f"Executing...\n{instruction[1]}\n"
+        yield get_chunk_to_yield(f"Executing...\n{instruction[1]}")
         instruction_type = instruction[0]
         instruction_command = instruction[1]
         if instruction_type == "READ":
@@ -526,16 +530,18 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
                 # chat_response += "The data you requested is: " + str(read) + ". "
                 new_read = [s for s in read if s]
                 printread = ", ".join(new_read)
-                yield f"The data you requested is:\n{printread}"
+                yield get_chunk_to_yield(f"The data you requested is:\n{printread}")
             else:
-                return "Sheet read failed."
+                yield get_chunk_to_yield("Sheet read failed.")
+                return
 
         elif instruction_type == "WRITE":
             new_sheet_content, success, instructions_wrote = write_instruction(sheet_content, instruction_command)
-            yield f"Attempted writing...\n{instructions_wrote}"
+            yield get_chunk_to_yield(f"Attempted writing...\n{instructions_wrote}")
             if not success:
                 print("Couldn't complete write instruction within allowed attempts")
-                return "Sheet write failed."
+                yield get_chunk_to_yield("Sheet write failed.")
+                return
             sheet_content = new_sheet_content
             write_sheet(sheets, sheet_id, sheet_range, sheet_content)
             chat_response += "Sheet write successful. "
@@ -543,31 +549,34 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
         elif instruction_type == "CHART":
             chart_instruction_response = chart_instruction(sheet_content, instruction_command, creds, sheet_id)
             if chart_instruction_response:
-                yield f"Attempted making a chart with given schema..."
+                yield get_chunk_to_yield(f"Attempted making a chart with given schema...")
                 chat_response += "Chart creation successful. "
             else:
-                return "Chart creation failed."
+                yield get_chunk_to_yield("Chart creation failed.")
+                return
 
         elif instruction_type == "OTHER":
             other_instruction_response = other_instruction(sheet_content, instruction_command, creds, sheet_id)
             if other_instruction_response:
-                yield f"Attempted completing command\n{instruction_command}"
+                yield get_chunk_to_yield(f"Attempted completing command\n{instruction_command}")
                 chat_response += "Instruction successful. "
             else:
-                return "Instruction failed."
+                yield get_chunk_to_yield("Instruction failed.")
+                return
 
         elif instruction_type == "QUESTION":
             question_res = question_instruction(sheet_content, instruction_command, creds, sheet_id)
-            yield question_res
+            yield get_chunk_to_yield(question_res)
 
         elif instruction_type == "INAPPROPRIATE":
             chat_response += "This is irrelevant to Google Sheets. "
-            yield f"Sorry I can't help with: {instruction_command}"
+            yield get_chunk_to_yield(f"Sorry I can't help with: {instruction_command}")
         else:
             print("Unrecognizable instruction!")
             
-    print("Finished ")
-    return "Finished executing instructions. " + chat_response
+    print("Finished all instructions")
+    yield get_chunk_to_yield("Finished executing instructions. " + chat_response)
+    return
 
 @app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK"), Secret.from_name("sheetfreak_OPENAI_API_KEY"), Secret.from_name("sheetfreak_OPENAI_ORG")])
 @web_endpoint(method="POST")

@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
+
+const CHUNK_DELIMITER = "--END_CHUNK--"
 
 interface Message {
     text: string;
@@ -26,12 +28,27 @@ export default function Act() {
     }
   }, [messages]);
 
+  const appendToLastMessage = (txt: string) => {
+    setMessages(prevMessages => {
+      let newMessages = [...prevMessages];
+
+      if (newMessages.length > 0) {
+        newMessages[newMessages.length - 1] = {
+          ...newMessages[newMessages.length - 1],
+          text: newMessages[newMessages.length - 1].text + " " + txt,
+        };
+      }
+
+      return newMessages;
+    });
+  }
+
   async function handleSendMessage() {
     if (inputMessage.trim() !== '') {
-        setMessages([...messages, { text: inputMessage, sender: 'user' }]);
-        setInputMessage('');
+        setMessages([...messages, { text: inputMessage, sender: 'user' }])
+        setInputMessage('')
         
-        setMessages(prevMessages => [...prevMessages, { text: "Starting...", sender: 'bot' }]);
+        setMessages(prevMessages => [...prevMessages, { text: "Starting...", sender: 'bot' }])
         const res = await fetch('/api/freak', {
             method: 'POST',
             body: JSON.stringify({
@@ -39,29 +56,43 @@ export default function Act() {
             sheet_id: sheetsId,
             })
         })
-        const reader = res.body?.getReader();
-        const decoder = new TextDecoder('utf-8');
+        const reader = res.body?.getReader()
+        const decoder = new TextDecoder('utf-8')
 
         if (!reader) {
-            console.error('Stream reader not available');
-            return;
+            console.error('Stream reader not available')
+            return
         }
 
         let done = false;
+        let buffer = ""
+        let newMessage = true
 
         while (!done) {
-            const { value, done: readerDone } = await reader.read();
+            const { value, done: readerDone } = await reader.read()
             done = readerDone;
 
             if (value) {
-                const chunk = decoder.decode(value, { stream: true });
-                console.log('Received chunk:', chunk);
-                setMessages(prevMessages => [...prevMessages, { text: chunk, sender: 'bot' }])
+                const chunk = decoder.decode(value, { stream: true })
+                buffer += chunk
+                const buffer_parts = buffer.split(" ")
+                for (let i = 0; i < buffer_parts.length - 1; i++) {
+                  const part = buffer_parts[i]
+                  if (part == CHUNK_DELIMITER) {
+                    newMessage = true
+                  } else {
+                    if (newMessage) {
+
+                      setMessages(prevMessages => [...prevMessages, { text: part, sender: 'bot' }])
+                      newMessage = false
+                    } else {
+                      appendToLastMessage(part)
+                    }
+                  }
+                }
+                buffer = buffer_parts[buffer_parts.length - 1]
             }
         }
-        console.log("Done")
-        // const results = await res.json()
-        // setMessages(prevMessages => [...prevMessages, { text: results.data, sender: 'bot' }]);
     }
   }
 
@@ -85,7 +116,8 @@ export default function Act() {
                 color: 'white',
                 padding: '5px 10px',
                 borderRadius: '10px',
-                display: 'inline-block'
+                display: 'inline-block',
+                whiteSpace: 'pre-line',
               }}
             >
                 {message.text}
