@@ -17,6 +17,7 @@ image = (
     .pip_install("google-auth-httplib2")
     .pip_install("google-auth-oauthlib")
     .pip_install("pandas")
+    .pip_install("boto3")
 )
 
 @app.function(image=image)
