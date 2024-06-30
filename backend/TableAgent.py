@@ -9,6 +9,7 @@ class TableAgent:
     """TableAgent is the agent responsible for manipulating the underlying table"""
     def __init__(self, sheet_id = -1):
         self.sheet_id = sheet_id
+        self.sheet_content = None
         creds_json = json.loads(os.environ["GOOGLE_CREDS_CRICK"])
         creds = Credentials(creds_json['token'],
                         refresh_token=creds_json['refresh_token'],
@@ -40,3 +41,26 @@ class TableAgent:
         copied_file_id = copied_file.get("id")
         self.sheet_id = copied_file_id
         print("Copied file ID:", copied_file_id)
+        
+        #Make file editable to anyone with the link
+        permission = {
+            'type': 'anyone',
+            'role': 'writer'
+        }
+        self.drive_service.permissions().create(fileId=copied_file_id, body=permission).execute()
+        file = self.drive_service.files().get(fileId=copied_file_id, fields='webViewLink').execute()
+        share_link = file.get('webViewLink')
+        return share_link
+
+    def get_sheets_content(self, sheet_range):
+        """Gets content of sheet ID"""
+        read_sheet_result = (
+            self.sheets_service.spreadsheets().values()
+            .get(spreadsheetId=self.sheet_id, range=sheet_range)
+            .execute()
+        )
+        sheet_content = read_sheet_result.get("values", [])
+        sheet_content = pd.DataFrame(sheet_content)
+        print("Read values:", sheet_content)
+        self.sheet_content = sheet_content
+        return sheet_content.to_string()

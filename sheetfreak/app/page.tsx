@@ -24,6 +24,7 @@ export default function Home() {
   async function onSubmit() {
     setIsLoading(true)
     if (isValidUrl) {
+      // TODO: try/except this call for when API call errors and doesn't return something that starts with 'Please'
       const res = await fetch('/api/getfreaky', {
         method: 'POST',
         body: JSON.stringify({

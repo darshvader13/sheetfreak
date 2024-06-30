@@ -485,7 +485,6 @@ def get_instructions(table, task):
     return instructions
 
 def act_streamer(task_prompt, sheet_id, sheet_range):
-    import time
     try:
         from googleapiclient.discovery import build
         from google.oauth2.credentials import Credentials
@@ -505,21 +504,19 @@ def act_streamer(task_prompt, sheet_id, sheet_range):
         sheet_content = read_sheet_result.get("values", [])
         sheet_content = pd.DataFrame(sheet_content)
         print("Read values:", sheet_content)
-        yield get_chunk_to_yield("Read in data...")
+        yield get_chunk_to_yield("Finished reading in data...")
         
     except:
         print("Couldn't read values")
-        yield get_chunk_to_yield("Error")
+        yield get_chunk_to_yield("Error reading data")
         return
     
     instructions = get_instructions(sheet_content, task_prompt)
     print("Got instructions", instructions)
     printinstrs = " ".join([f"{instr[1]}" for instr in instructions])
     yield get_chunk_to_yield(f"Formulated instructions: {printinstrs} ")
-    time.sleep(0.1)
 
     chat_response = ""
-    print(len(instructions))
     for instruction in instructions:
         print("Executing", instruction)
         yield get_chunk_to_yield(f"Executing...\n{instruction[1]}")
