@@ -211,6 +211,10 @@ class LLMAgent:
             except Exception as e:
                 print("Error in get_instructions")
                 print(e)
+                if str(e).startswith("Error code: 429"):
+                    # Rate limited
+                    yield get_chunk_to_yield("Sorry, please try again later!")
+                    return
                 continue
         print("Instructions:", instructions)
         if instructions == None:
