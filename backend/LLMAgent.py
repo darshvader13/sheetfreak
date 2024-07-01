@@ -38,7 +38,7 @@ class LLMAgent:
 
     def __init__(self, default_call="gpt", default_gpt_model="gpt-4o", default_claude_model="claude-3.5"):
         self.tools_to_models = {} # Maps tool's function name to model to use for that tool
-        self.max_attempts = 7
+        self.max_attempts = 1
         self.default_call = default_call # Either 'gpt' or 'claude'
         self.default_gpt_model = default_gpt_model
         self.default_claude_model = default_claude_model
@@ -90,6 +90,8 @@ class LLMAgent:
             tools=[tool],
             tool_choice="required",
         )
+        print(response)
+        print("Response status code:", response.status_code)
         print(response.choices[0].message)
         return response.choices[0].message
     
@@ -152,7 +154,15 @@ class LLMAgent:
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
             claude_response = self.call_claude(model_ID, user_msg, tool_name)
-            # TODO: claude instructions
+            args_collection = [None for _ in range(len(args_names))]
+            args_collection_i = 0
+            for item in claude_response:
+                if item['type'] == "tool_use":
+                    args_collection[args_collection_i] = item['input']
+                    args_collection_i += 1
+            print(f"{tool_name} function args collected: {args_collection}")
+            return True, "", args_collection
+            
         else:
             print("Invalid LLM")
             return False, "Invalid LLM", ""
@@ -165,7 +175,7 @@ class LLMAgent:
         elif instruction_type == "READ":
             return ["rows", "columns"]
         elif instruction_type == "CHART":
-            return ["arguments"]
+            return ["chart_arg"]
         elif instruction_type == "QUESTION":
             return ["answer"]
         elif instruction_type == "OTHER":
@@ -198,10 +208,14 @@ class LLMAgent:
                 else:
                     instructions = args
                     break
-            except:
+            except Exception as e:
                 print("Error in get_instructions")
+                print(e)
                 continue
         print("Instructions:", instructions)
+        if instructions == None:
+            yield get_chunk_to_yield("Error getting instructions")
+            return
         print_instructions = " ".join([instr[1] for instr in instructions])
         yield get_chunk_to_yield(f"Plan: {print_instructions}")
 
@@ -233,7 +247,16 @@ class LLMAgent:
                         prev_response_error = error_msg
                         print("Error:", error_msg)
                         continue
-                    success, error_msg, result = table_agent.execute_instruction(instruction_type, args)
+                    info_instruction_type = instruction_type
+                    if instruction_type == "CHART":
+                        if "create_chart" in self.tools_to_models:
+                            if self.tools_to_models["create_chart"].startswith("claude"):
+                                info_instruction_type += "-claude"
+                            else:
+                                info_instruction_type += "-gpt"
+                        else:
+                            info_instruction_type += "-" + self.default_call
+                    success, error_msg, result = table_agent.execute_instruction(info_instruction_type, args)
                     if not success:
                         assert(type(error_msg) == type(result) == str)
                         prev_response_error = error_msg

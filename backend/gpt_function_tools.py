@@ -156,7 +156,7 @@ gpt_create_chart_tool = {
         "parameters": { 
             "type": "object",
             "properties": {
-                "arguments": {
+                "chart_arg": {
                     "type": "array",
                     "items": {
                         "type": "string",
@@ -169,7 +169,7 @@ gpt_create_chart_tool = {
                     
                 }
             },
-            "required": ["arguments"]
+            "required": ["chart_arg"]
         }
     }
 }

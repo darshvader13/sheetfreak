@@ -131,8 +131,8 @@ class TableAgent:
         print("Read in", returned_values)
         return returned_values
     
-    def create_chart(self, args):
-        """Creates a chart"""
+    def get_chart_req(self, args):
+        """Creates chart request from GPT response"""
         format_arguments = lambda x: json.loads(x) if type(x)==str else x
         create_chart_request = {
             "requests": [
@@ -156,17 +156,21 @@ class TableAgent:
                 }
             ]
         }
-
-        print("Creating chart with", create_chart_request)
-        create_chart_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=create_chart_request).execute()
+        return create_chart_request
+    
+    def create_chart(self, req):
+        """Creates a chart"""
+        print("Creating chart with", req)
+        create_chart_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=req).execute()
         print("Finished operation", create_chart_response)
     
     def other_instruction(self, args):
         """Performs other instruction via spreadsheets.batchUpdate()"""
+        print("Executing other instruction with", args)
         other_instruction_response = self.sheets_service.spreadsheets().batchUpdate(
             spreadsheetId=self.sheet_id, body=args[0]
             ).execute()
-        print("Executed other instruction with", args)
+        print("Finished operation", other_instruction_response)
     
     def execute_instruction(self, instruction_type, args):
         print(f"Attempting {instruction_type} with {args}")
@@ -177,14 +181,21 @@ class TableAgent:
             elif instruction_type == "READ":
                 vals = self.read_table(args)
                 return True, "", vals
-            elif instruction_type == "CHART":
-                self.create_chart(args[0])
+            elif instruction_type == "CHART-gpt":
+                chart_req = self.get_chart_req(args[0])
+                self.create_chart(chart_req)
+                return True, "", "Created chart"
+            elif instruction_type == "CHART-claude":
+                self.create_chart(args[0]["chart_arg"])
                 return True, "", "Created chart"
             elif instruction_type == "QUESTION":
                 return True, "", args[0]
             elif instruction_type == "OTHER":
                 self.other_instruction(args)
                 return True, "", "Completed instruction"
+            else:
+                print("Unrecognized instruction type")
+                return False, "Unrecognized instruction type", ""
             
         except Exception as e:
             print("Exception when attempting instruction:", e)
