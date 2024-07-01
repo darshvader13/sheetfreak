@@ -42,7 +42,7 @@ class LLMAgent:
         self.default_call = default_call # Either 'gpt' or 'claude'
         self.default_gpt_model = default_gpt_model
         self.default_claude_model = default_claude_model
-        self.openai_client = OpenAI(organization=os.environ["OPENAI_ORG"])
+        self.openai_client = OpenAI(organization=os.environ["OPENAI_PERSONAL_ORG"])
         self.bedrock_client = boto3.client(service_name='bedrock-runtime', region_name='us-east-1',
                                 aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
                                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],

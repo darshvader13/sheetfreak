@@ -42,7 +42,7 @@ def ingest(req: dict):
     except:
         return "Please provide a valid Google Sheets share link and select 'Anyone with the link can view'!"
 
-@app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK"), Secret.from_name("sheetfreak_OPENAI_API_KEY"), Secret.from_name("sheetfreak_OPENAI_ORG"), Secret.from_name("sheetfreak_AWS_ACCESS_KEY_ID"), Secret.from_name("sheetfreak_AWS_SECRET_ACCESS_KEY")])
+@app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK"), Secret.from_name("sheetfreak_OPENAI_PERSONAL_API_KEY"), Secret.from_name("sheetfreak_OPENAI_PERSONAL_ORG"), Secret.from_name("sheetfreak_AWS_ACCESS_KEY_ID"), Secret.from_name("sheetfreak_AWS_SECRET_ACCESS_KEY")])
 @web_endpoint(method="POST")
 def act(req: dict):
     """Given the task prompt and sheet ID, execute the instructions"""
