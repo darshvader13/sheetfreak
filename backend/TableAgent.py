@@ -191,7 +191,7 @@ class TableAgent:
             elif instruction_type == "QUESTION":
                 return True, "", args[0]
             elif instruction_type == "OTHER":
-                self.other_instruction(args)
+                self.other_instruction(args[0])
                 return True, "", "Completed instruction"
             else:
                 print("Unrecognized instruction type")
