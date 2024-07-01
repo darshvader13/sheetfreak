@@ -38,7 +38,7 @@ class LLMAgent:
 
     def __init__(self, default_call="gpt", default_gpt_model="gpt-4o", default_claude_model="claude-3.5"):
         self.tools_to_models = {} # Maps tool's function name to model to use for that tool
-        self.max_attempts = 1
+        self.max_attempts = 5
         self.default_call = default_call # Either 'gpt' or 'claude'
         self.default_gpt_model = default_gpt_model
         self.default_claude_model = default_claude_model
@@ -90,8 +90,6 @@ class LLMAgent:
             tools=[tool],
             tool_choice="required",
         )
-        print(response)
-        print("Response status code:", response.status_code)
         print(response.choices[0].message)
         return response.choices[0].message
     
@@ -213,7 +211,7 @@ class LLMAgent:
                 print(e)
                 if str(e).startswith("Error code: 429"):
                     # Rate limited
-                    yield get_chunk_to_yield("Sorry, please try again later!")
+                    yield get_chunk_to_yield("Sorry, please try again in a few minutes!")
                     return
                 continue
         print("Instructions:", instructions)
