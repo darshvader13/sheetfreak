@@ -11,16 +11,15 @@ export async function POST(req: Request) {
         console.log(user_url)
 
         //Production
-        // const response = await axios.post('https://sheetfreak--sheetfreak-ingest.modal.run', {
-        //     google_sheets_link: user_url,
-        // })
-
-        //Development
-        const response = await axios.post('https://sheetfreak--sheetfreak-ingest-dev.modal.run', {
+        const response = await axios.post('https://sheetfreak--sheetfreak-ingest.modal.run', {
             google_sheets_link: user_url,
         })
-        
 
+        //Development
+        // const response = await axios.post('https://sheetfreak--sheetfreak-ingest-dev.modal.run', {
+        //     google_sheets_link: user_url,
+        // })
+        
         console.log("Received status: ")
         console.log(response.data)
         return NextResponse.json({ data: response.data }, { status: 200 })
