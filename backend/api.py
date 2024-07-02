@@ -103,8 +103,6 @@ def ingest(req: dict):
         return "No input provided"
     
     try:
-<<<<<<< Updated upstream
-=======
         from googleapiclient.discovery import build
         from google.oauth2.credentials import Credentials
 
@@ -114,16 +112,12 @@ def ingest(req: dict):
         drive_service = build('drive', 'v3', credentials=creds)
         sheets_service = build("sheets", "v4", credentials=creds)
 
->>>>>>> Stashed changes
         user_sheets_id = user_sheets_share_link.split('/')[5]
         print("Found user sheets id:", user_sheets_id)
 
         table_agent = TableAgent()
         user_sheets_title = table_agent.get_sheets_title(user_sheets_id)
 
-<<<<<<< Updated upstream
-        share_link = table_agent.copy_user_sheets(user_sheets_id, user_sheets_title)
-=======
         DRIVE_FOLDER = "1LAEzfodH-7MUQcEZRJlifSXxkrSPhTUY"
         request_body = {
             'name': user_sheets_title + ' w/ sheetfreak',
@@ -145,7 +139,6 @@ def ingest(req: dict):
         drive_service.permissions().create(fileId=copied_file_id, body=permission).execute()
         file = drive_service.files().get(fileId=copied_file_id, fields='webViewLink').execute()
         share_link = file.get('webViewLink')
->>>>>>> Stashed changes
         return share_link
     except:
         return "Please provide a valid Google Sheets share link and select 'Anyone with the link can view'!"
