@@ -272,7 +272,7 @@ gpt_question_tool = {
 gpt_question_sys_msg = {"role": "system",
                     "content": """You are an expert assistant using Google Sheets.
     Given a table in a pandas dataframe representation and a question regarding Google Sheets
-    return the function call to answer the question as if the table is a Google Sheets. """
+    return the function call to answer the question as if the table is a Google Sheets."""
 }
 
 gpt_other_instruction_tool = {

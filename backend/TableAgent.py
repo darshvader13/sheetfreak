@@ -183,7 +183,8 @@ class TableAgent:
                 self.create_chart(chart_req)
                 return True, "", "Created chart"
             elif instruction_type == "CHART-claude":
-                self.create_chart(args[0]["chart_arg"])
+                chart_req = {"requests": [json.loads(args[0])]}
+                self.create_chart(chart_req)
                 return True, "", "Created chart"
             elif instruction_type == "QUESTION":
                 return True, "", args[0]

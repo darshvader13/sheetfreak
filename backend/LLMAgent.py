@@ -36,18 +36,23 @@ instruction_type_to_tool_name = {
 class LLMAgent:
     """LLMAgent is the orchestrated agent responsible for making LLM calls to plan and produce instructions"""
 
-    def __init__(self, default_call="gpt", default_gpt_model="gpt-4o", default_claude_model="claude-3.5"):
-        self.tools_to_models = {} # Maps tool's function name to model to use for that tool
+    def __init__(self, default_call="gpt", default_gpt_model="gpt-4o", default_claude_model="claude-3.5", tools_to_models={}):
         self.max_attempts = 5
         self.default_call = default_call # Either 'gpt' or 'claude'
         self.default_gpt_model = default_gpt_model
         self.default_claude_model = default_claude_model
+        self.tools_to_models = tools_to_models # Maps tool's function name to model to use for that tool
         self.openai_client = OpenAI(organization=os.environ["OPENAI_PERSONAL_ORG"])
         self.bedrock_client = boto3.client(service_name='bedrock-runtime', region_name='us-east-1',
                                 aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
                                 aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
                                 )
     
+    def set_default_call(self, call):
+        """Sets the default call (either gpt or claude)"""
+        self.default_call = call
+        print("default_call:", self.default_call)
+
     def set_tools_to_models(self, key, value):
         """Sets the model to use for the given tool"""
         if key not in tools:
@@ -154,14 +159,33 @@ class LLMAgent:
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
             claude_response = self.call_claude(model_ID, user_msg, tool_name)
-            args_collection = [None for _ in range(len(args_names))]
-            args_collection_i = 0
+            args_collection = {}
             for item in claude_response:
                 if item['type'] == "tool_use":
-                    args_collection[args_collection_i] = item['input']
-                    args_collection_i += 1
-            print(f"{tool_name} function args collected: {args_collection}")
-            return True, "", args_collection
+                    args = item['input']
+                    for arg_name in args_names:
+                        if arg_name in args_collection:
+                            print("Redundant argument")
+                            return False, "redundant argument", str(args)
+                        args_collection[arg_name] = args[arg_name]
+
+            args_collection_list = []
+            for i, arg_name in enumerate(args_names):
+                args_collection_list.append(args_collection[arg_name])
+                if i > 0 and type(args_collection_list[i]) == list and type(args_collection_list[i-1]) == list:
+                    if len(args_collection_list[i]) != len(args_collection_list[i-1]):
+                        print("Invalid instructions")
+                        return False, "Invalid instructions length", str(args_collection)
+            print(f"{tool_name} function args collected: {args_collection_list}")
+            if tool_name != "get_instructions" and tool_name != "write_table" and tool_name != "read_table":
+                return True, "", args_collection_list
+            assert(type(args_collection_list[0] == list))
+            instruction_args = []
+            for i in range(len(args_collection_list[0])):
+                curr_instruction = [args_collection_list[j][i] for j in range(len(args_names))]
+                instruction_args.append(curr_instruction)
+            print("Args zipped:", instruction_args)
+            return True, "", instruction_args
             
         else:
             print("Invalid LLM")
