@@ -53,9 +53,9 @@ class TableAgent:
         share_link = file.get('webViewLink')
         return share_link
     
-    def upload_user_sheets(self, file, sheet_range="Sheet1"):
+    async def upload_user_sheets(self, file, sheet_range="Sheet1"):
         """Uploads user .xlsx or .csv to a Google Sheets file"""
-        contents = file.read()
+        contents = await file.read()
         
         if file.filename.endswith('.xlsx'):
             df = pd.read_excel(BytesIO(contents))

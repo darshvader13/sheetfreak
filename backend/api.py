@@ -10,6 +10,7 @@ app = App("sheetfreak")
 image = (
     Image.debian_slim()
     .pip_install("pandas")
+    .pip_install("openpyxl")
     .pip_install("google-api-python-client")
     .pip_install("google-auth-httplib2")
     .pip_install("google-auth-oauthlib")
@@ -28,12 +29,12 @@ async def upload(file: UploadFile = File(...)):
     """Upload a file (.xlsx or .csv), convert to DataFrame, and save as Google Sheet"""
     try:
         table_agent = TableAgent()
-        return table_agent.upload_user_sheets(file)        
+        return await table_agent.upload_user_sheets(file)
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
         print(f"Error: {error_details}")
-        return "Error processing file: " + str(e)
+        return "Error processing file"
 
 
 @app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK"), Secret.from_name("sheetfreak_GOOGLE_DRIVE_FOLDER_ID")])

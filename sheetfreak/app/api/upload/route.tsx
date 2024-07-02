@@ -20,8 +20,6 @@ export async function POST(req: Request) {
         const modalFormData = new FormData()
         modalFormData.append('file', file)
 
-        console.log(modalFormData)
-
         //Production    
         const response = await axios.post('https://sheetfreak--sheetfreak-upload.modal.run', modalFormData, {
             headers: {
