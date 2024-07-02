@@ -134,7 +134,7 @@ class LLMAgent:
                     if not args_collection[j]:
                         args_collection[j] = args[args_names[j]]
                     else:
-                        if type(args_collection[j] == str):
+                        if type(args_collection[j]) == str:
                             args_collection[j] += " " + args[args_names[j]]
                         else:
                             args_collection[j] += args[args_names[j]]
@@ -142,6 +142,7 @@ class LLMAgent:
                         if len(args_collection[j]) != len(args_collection[j-1]):
                             print("Invalid instructions")
                             return False, "Invalid instructions length", instruction_args
+            print("Args collection:", args_collection)
             if tool_name != "get_instructions" and tool_name != "write_table" and tool_name != "read_table":
                 return True, "", args_collection
             assert(type(args_collection[0] == list))
@@ -149,6 +150,7 @@ class LLMAgent:
             for i in range(len(args_collection[0])):
                 curr_instruction = [args_collection[j][i] for j in range(len(args_names))]
                 instruction_args.append(curr_instruction)
+            print("Args zipped:", instruction_args)
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
             claude_response = self.call_claude(model_ID, user_msg, tool_name)
@@ -261,6 +263,7 @@ class LLMAgent:
                     success, error_msg, result = table_agent.execute_instruction(info_instruction_type, args)
                     if not success:
                         assert(type(error_msg) == type(result) == str)
+                        prev_response = result
                         prev_response_error = error_msg
                         print("Error:", error_msg)
                         continue

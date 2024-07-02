@@ -31,11 +31,6 @@ export async function POST(req: Request) {
 
         const stream = response.data
         return new StreamingTextResponse(stream)
-
-        // console.log("Received status: ")
-        // console.log(response.data)
-        // res.write("Starting")
-        // return NextResponse.json({ data: "Starting stream" }, { status: 200 })
     } catch(err) {
         console.log(err)
         return NextResponse.json({ data: "Error" }, { status: 500 })

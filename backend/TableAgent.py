@@ -101,18 +101,15 @@ class TableAgent:
 
     def write_table(self, args):
         """Write the table at the given rows and columns to the given values"""
-        rows = args[0]
-        columns = args[1]
-        values = args[2]
-        
-        maxRows = max(rows)
-        maxCols = max(columns)
-        self.expand_table(maxRows, maxCols)
+        for write_args in args:
+            row = write_args[0]
+            col = write_args[1]
+            value = write_args[2]
 
-        n = len(rows)
-        for i in range(n):
-            print(f"Setting {rows[i]}, {columns[i]} to {values[i]}")
-            self.sheet_content.iloc[rows[i], columns[i]] = values[i]
+            self.expand_table(row, col)
+
+            print(f"Setting {row}, {col} to {value}")
+            self.sheet_content.iloc[row, col] = value
         print("Final sheet:", self.sheet_content)
 
     def read_table(self, args):
@@ -199,4 +196,4 @@ class TableAgent:
             
         except Exception as e:
             print("Exception when attempting instruction:", e)
-            return False, str(e), ""
+            return False, str(e), str(args)
