@@ -7,6 +7,7 @@ from openpyxl import load_workbook
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from googleapiclient.http import MediaIoBaseUpload
 
 class TableAgent:
     """TableAgent is the agent responsible for manipulating the underlying table"""
@@ -57,68 +58,27 @@ class TableAgent:
     
     async def upload_user_sheets(self, file, sheet_range="Sheet1"):
         """Uploads user .xlsx or .csv to a Google Sheets file"""
-        contents = await file.read()
-        
         if file.filename.endswith('.xlsx'):
-            df = pd.read_excel(BytesIO(contents))
-            # workbook = load_workbook(BytesIO(contents), data_only=False)
-            # sheet = workbook.active
-            
-            # from itertools import islice
-            # data = sheet.values
-            # cols = next(data)[1:]
-            # data = list(data)
-            # idx = [r[0] for r in data]
-            # data = (islice(r, 1, None) for r in data)
-            # df = pd.DataFrame(data, index=idx, columns=cols)
-            # TODO: upload .xlsx directly to Google Sheets
-
+            mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         elif file.filename.endswith('.csv'):
-            df = pd.read_csv(BytesIO(contents))
+            mime_type = 'text/csv'
         else:
             return "Error: unsupported file type. Please upload .xlsx or .csv file."
-        df = df.fillna("")
+   
+        file_content = await file.read()
+        file_like_object = BytesIO(file_content)
+        
+        media = MediaIoBaseUpload(file_like_object, mimetype=mime_type, resumable=True)
 
-        sheet_metadata = {
-            'properties': {
-                'title': file.filename + " w sheetfreak"
-            },
+        file_metadata = {
+            'name': file.filename + " w sheetfreak",
+            'mimeType': 'application/vnd.google-apps.spreadsheet'
         }
 
-        copied_sheet = self.sheets_service.spreadsheets().create(body=sheet_metadata).execute()
-        sheet_id = copied_sheet['spreadsheetId']
+        sheet = self.drive_service.files().create(body=file_metadata, media_body=media).execute()
+        self.sheet_id = sheet['id']
 
-        file = self.drive_service.files().update(
-            fileId=sheet_id,
-            addParents=os.environ["GOOGLE_DRIVE_FOLDER_ID"],
-            fields='id, parents'
-        ).execute()
-        self.sheet_id = sheet_id
-
-        column_titles = df.columns.tolist()
-        for i, title in enumerate(column_titles):
-            if title.startswith("Unnamed: "):
-                column_titles[i] = ""
-        values = [column_titles] + df.values.tolist()
-
-        request_body = {
-            'values': values
-        }
-
-        self.sheets_service.spreadsheets().values().update(
-            spreadsheetId=sheet_id, range=sheet_range,
-            valueInputOption='RAW', body=request_body).execute()
-        print("Created sheet id:", sheet_id)
-
-        permission = {
-            'type': 'anyone',
-            'role': 'writer'
-        }
-
-        self.drive_service.permissions().create(fileId=sheet_id, body=permission).execute()
-        file = self.drive_service.files().get(fileId=sheet_id, fields='webViewLink').execute()
-        share_link = file.get('webViewLink')
-        return share_link
+        return self.copy_user_sheets(self.sheet_id, file.filename)
 
     def get_sheet_content(self, sheet_range):
         """Gets content of sheet ID"""
