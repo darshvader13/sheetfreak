@@ -107,7 +107,8 @@ class LLMAgent:
             "system": sys_msg,
             "messages": messages,
             "max_tokens": 4000,
-            "tools": [tool]
+            "tools": [tool],
+            "tool_choice": {"type": "any"},
         })
 
         response = self.bedrock_client.invoke_model(body=body, modelId=model_ID)
