@@ -30,7 +30,7 @@ export default function Home() {
         setInvalidMessage('')
       } else {
         setFile(null)
-        setInvalidMessage('Please upload only .xlsx or .csv files.')
+        setInvalidMessage('Please upload a .xlsx or .csv file.')
       }
     }
   }
@@ -65,7 +65,7 @@ export default function Home() {
       if (!result.data.includes("Error")) {
         router.push(`/act?link=${encodeURIComponent(result.data)}`)
       } else {
-        setInvalidMessage(result.data || 'Error uploading da file')
+        setInvalidMessage(result.data || 'Error uploading file')
         setIsLoading(false)
       }
     } else {
@@ -76,7 +76,7 @@ export default function Home() {
 
   return (
     <div className="p-10 space-y-4">
-      <h1 className="pb-4 pl-2 font-bold text-2xl">freakinthesheets</h1>
+      <h1 className="pb-4 pl-2 font-bold text-2xl">sheetfreak</h1>
       <Input
         type="text"
         value={url}

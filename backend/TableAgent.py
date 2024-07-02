@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import json
+from io import BytesIO
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -49,6 +50,52 @@ class TableAgent:
         }
         self.drive_service.permissions().create(fileId=copied_file_id, body=permission).execute()
         file = self.drive_service.files().get(fileId=copied_file_id, fields='webViewLink').execute()
+        share_link = file.get('webViewLink')
+        return share_link
+    
+    def upload_user_sheets(self, file, sheet_range="Sheet1"):
+        """Uploads user .xlsx or .csv to a Google Sheets file"""
+        contents = file.read()
+        
+        if file.filename.endswith('.xlsx'):
+            df = pd.read_excel(BytesIO(contents))
+        elif file.filename.endswith('.csv'):
+            df = pd.read_csv(BytesIO(contents))
+        else:
+            return "Error: unsupported file type. Please upload .xlsx or .csv file."
+        
+        sheet_metadata = {
+            'properties': {
+                'title': file.filename + " w sheetfreak"
+            },
+        }
+
+        copied_sheet = self.sheets_service.spreadsheets().create(body=sheet_metadata).execute()
+        sheet_id = copied_sheet['spreadsheetId']
+
+        file = self.drive_service.files().update(
+            fileId=sheet_id,
+            addParents=os.environ["GOOGLE_DRIVE_FOLDER_ID"],
+            fields='id, parents'
+        ).execute()
+
+        values = [df.columns.tolist()] + df.values.tolist()
+
+        request_body = {
+            'values': values
+        }
+
+        self.sheets_service.spreadsheets().values().update(
+            spreadsheetId=sheet_id, range=sheet_range,
+            valueInputOption='RAW', body=request_body).execute()
+
+        permission = {
+            'type': 'anyone',
+            'role': 'writer'
+        }
+
+        self.drive_service.permissions().create(fileId=sheet_id, body=permission).execute()
+        file = self.drive_service.files().get(fileId=sheet_id, fields='webViewLink').execute()
         share_link = file.get('webViewLink')
         return share_link
 

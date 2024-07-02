@@ -27,73 +27,16 @@ def home():
 async def upload(file: UploadFile = File(...)):
     """Upload a file (.xlsx or .csv), convert to DataFrame, and save as Google Sheet"""
     try:
-        import pandas as pd
-        from io import BytesIO
-        
-        contents = await file.read()
-        
-        # Determine file type and read into DataFrame
-        if file.filename.endswith('.xlsx'):
-            df = pd.read_excel(BytesIO(contents))
-        elif file.filename.endswith('.csv'):
-            df = pd.read_csv(BytesIO(contents))
-        else:
-            return "Error with unsupported file type. Please upload .xlsx or .csv files."
-
-        # Get Google credentials
-        GOOGLE_CREDENTIALS_JSON = json.loads(os.environ["GOOGLE_CREDS_CRICK"])
-        creds = get_google_credentials(GOOGLE_CREDENTIALS_JSON)
-        
-        # Create a new Google Sheet
-        from googleapiclient.discovery import build
-        drive_service = build('drive', 'v3', credentials=creds)
-        sheets_service = build('sheets', 'v4', credentials=creds)
-
-        DRIVE_FOLDER = "1LAEzfodH-7MUQcEZRJlifSXxkrSPhTUY"
-        sheet_metadata = {
-            'properties': {
-                'title': file.filename + " w/ freakinthesheets"
-            },
-        }
-
-        sheet = sheets_service.spreadsheets().create(body=sheet_metadata).execute()
-        sheet_id = sheet['spreadsheetId']
-
-        file = drive_service.files().update(
-            fileId=sheet_id,
-            addParents=DRIVE_FOLDER,
-            fields='id, parents'
-        ).execute()
-
-        # Write DataFrame to Google Sheet
-        values = [df.columns.tolist()] + df.values.tolist()
-
-        request_body = {
-            'values': values
-        }
-
-        sheets_service.spreadsheets().values().update(
-            spreadsheetId=sheet_id, range='Sheet1',
-            valueInputOption='RAW', body=request_body).execute()
-
-        # Make file editable to anyone with the link
-        permission = {
-            'type': 'anyone',
-            'role': 'writer'
-        }
-
-        drive_service.permissions().create(fileId=sheet_id, body=permission).execute()
-        file = drive_service.files().get(fileId=sheet_id, fields='webViewLink').execute()
-        share_link = file.get('webViewLink')
-        return share_link
+        table_agent = TableAgent()
+        return table_agent.upload_user_sheets(file)        
     except Exception as e:
         import traceback
         error_details = traceback.format_exc()
-        print(f"Error details: {error_details}")
+        print(f"Error: {error_details}")
         return "Error processing file: " + str(e)
 
 
-@app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK")])
+@app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK"), Secret.from_name("sheetfreak_GOOGLE_DRIVE_FOLDER_ID")])
 @web_endpoint(method="POST")
 def ingest(req: dict):
     """Copy the user given Google Sheets into local Google Drive and return local sheets ID"""
@@ -103,42 +46,13 @@ def ingest(req: dict):
         return "No input provided"
     
     try:
-        from googleapiclient.discovery import build
-        from google.oauth2.credentials import Credentials
-
-        GOOGLE_CREDENTIALS_JSON = json.loads(os.environ["sheetfreak_GOOGLE_CREDS_CRICK"])
-        creds = get_google_credentials(GOOGLE_CREDENTIALS_JSON)
-        
-        drive_service = build('drive', 'v3', credentials=creds)
-        sheets_service = build("sheets", "v4", credentials=creds)
-
         user_sheets_id = user_sheets_share_link.split('/')[5]
         print("Found user sheets id:", user_sheets_id)
 
         table_agent = TableAgent()
         user_sheets_title = table_agent.get_sheets_title(user_sheets_id)
 
-        DRIVE_FOLDER = "1LAEzfodH-7MUQcEZRJlifSXxkrSPhTUY"
-        request_body = {
-            'name': user_sheets_title + ' w/ sheetfreak',
-            'parents': [DRIVE_FOLDER]
-        }
-
-        copied_file = drive_service.files().copy(
-            fileId=user_sheets_id,
-            body=request_body
-        ).execute()
-        copied_file_id = copied_file.get("id")
-        print("Copied file ID:", copied_file_id)
-
-        #Make file editable to anyone with the link
-        permission = {
-            'type': 'anyone',
-            'role': 'writer'
-        }
-        drive_service.permissions().create(fileId=copied_file_id, body=permission).execute()
-        file = drive_service.files().get(fileId=copied_file_id, fields='webViewLink').execute()
-        share_link = file.get('webViewLink')
+        share_link = table_agent.copy_user_sheets(user_sheets_id, user_sheets_title)
         return share_link
     except:
         return "Please provide a valid Google Sheets share link and select 'Anyone with the link can view'!"
