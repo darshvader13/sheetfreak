@@ -2,8 +2,9 @@ from LLMAgent import LLMAgent
 from TableAgent import TableAgent
 
 from modal import App, Image, web_endpoint, Secret
-from fastapi import File, UploadFile, FastAPI
+from fastapi import File, UploadFile
 from fastapi.responses import StreamingResponse
+import traceback
 
 app = App("sheetfreak")
 
@@ -30,8 +31,7 @@ async def upload(file: UploadFile = File(...)):
     try:
         table_agent = TableAgent()
         return await table_agent.upload_user_sheets(file)
-    except Exception as e:
-        import traceback
+    except:
         error_details = traceback.format_exc()
         print(f"Error: {error_details}")
         return "Error processing file"
@@ -56,6 +56,8 @@ def ingest(req: dict):
         share_link = table_agent.copy_user_sheets(user_sheets_id, user_sheets_title)
         return share_link
     except:
+        error_details = traceback.format_exc()
+        print(f"Error: {error_details}")
         return "Please provide a valid Google Sheets share link and select 'Anyone with the link can view'!"
 
 @app.function(image=image, secrets=[Secret.from_name("sheetfreak_GOOGLE_CREDS_CRICK"), Secret.from_name("sheetfreak_OPENAI_PERSONAL_API_KEY"), Secret.from_name("sheetfreak_OPENAI_PERSONAL_ORG"), Secret.from_name("sheetfreak_AWS_ACCESS_KEY_ID"), Secret.from_name("sheetfreak_AWS_SECRET_ACCESS_KEY")])

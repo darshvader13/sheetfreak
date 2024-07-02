@@ -1,7 +1,9 @@
 import os
 import pandas as pd
 import json
+import traceback
 from io import BytesIO
+from openpyxl import load_workbook
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -35,21 +37,21 @@ class TableAgent:
             'parents': [os.environ["GOOGLE_DRIVE_FOLDER_ID"]]
         }
 
-        copied_file = self.drive_service.files().copy(
+        copied_sheet = self.drive_service.files().copy(
             fileId=user_sheets_id,
             body=request_body
         ).execute()
-        copied_file_id = copied_file.get("id")
-        self.sheet_id = copied_file_id
-        print("Copied file ID:", copied_file_id)
+        copied_sheet_id = copied_sheet.get("id")
+        self.sheet_id = copied_sheet_id
+        print("Copied sheet ID:", copied_sheet_id)
         
         #Make file editable to anyone with the link
         permission = {
             'type': 'anyone',
             'role': 'writer'
         }
-        self.drive_service.permissions().create(fileId=copied_file_id, body=permission).execute()
-        file = self.drive_service.files().get(fileId=copied_file_id, fields='webViewLink').execute()
+        self.drive_service.permissions().create(fileId=copied_sheet_id, body=permission).execute()
+        file = self.drive_service.files().get(fileId=copied_sheet_id, fields='webViewLink').execute()
         share_link = file.get('webViewLink')
         return share_link
     
@@ -59,11 +61,24 @@ class TableAgent:
         
         if file.filename.endswith('.xlsx'):
             df = pd.read_excel(BytesIO(contents))
+            # workbook = load_workbook(BytesIO(contents), data_only=False)
+            # sheet = workbook.active
+            
+            # from itertools import islice
+            # data = sheet.values
+            # cols = next(data)[1:]
+            # data = list(data)
+            # idx = [r[0] for r in data]
+            # data = (islice(r, 1, None) for r in data)
+            # df = pd.DataFrame(data, index=idx, columns=cols)
+            # TODO: upload .xlsx directly to Google Sheets
+
         elif file.filename.endswith('.csv'):
             df = pd.read_csv(BytesIO(contents))
         else:
             return "Error: unsupported file type. Please upload .xlsx or .csv file."
-        
+        df = df.fillna("")
+
         sheet_metadata = {
             'properties': {
                 'title': file.filename + " w sheetfreak"
@@ -78,8 +93,13 @@ class TableAgent:
             addParents=os.environ["GOOGLE_DRIVE_FOLDER_ID"],
             fields='id, parents'
         ).execute()
+        self.sheet_id = sheet_id
 
-        values = [df.columns.tolist()] + df.values.tolist()
+        column_titles = df.columns.tolist()
+        for i, title in enumerate(column_titles):
+            if title.startswith("Unnamed: "):
+                column_titles[i] = ""
+        values = [column_titles] + df.values.tolist()
 
         request_body = {
             'values': values
@@ -88,6 +108,7 @@ class TableAgent:
         self.sheets_service.spreadsheets().values().update(
             spreadsheetId=sheet_id, range=sheet_range,
             valueInputOption='RAW', body=request_body).execute()
+        print("Created sheet id:", sheet_id)
 
         permission = {
             'type': 'anyone',
@@ -243,5 +264,7 @@ class TableAgent:
                 return False, "Unrecognized instruction type", ""
             
         except Exception as e:
+            error_details = traceback.format_exc()
+            print(f"Error: {error_details}")
             print("Exception when attempting instruction:", e)
             return False, str(e), str(args)

@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 from TableAgent import *
 from gpt_function_tools import *
 from claude_function_tools import *
@@ -213,6 +214,8 @@ class LLMAgent:
             sheet_content = table_agent.get_sheet_content(sheet_range)
             yield get_chunk_to_yield("Finished reading in data...")
         except:
+            error_details = traceback.format_exc()
+            print(f"Error: {error_details}")
             yield get_chunk_to_yield("Error reading data")
             return
         
@@ -297,7 +300,9 @@ class LLMAgent:
                     yield get_chunk_to_yield(result)
                     failed_all_attempts = False
                     break
-                except Exception as e:
+                except:
+                    error_details = traceback.format_exc()
+                    print(f"Error: {error_details}")
                     prev_response = None
                     prev_response_error = None
                     continue
