@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "sheetfreak",
-  description: "CalHacks x Skydeck AI Hackathon",
+  description: "Excel x Google Sheets Agent",
 };
 
 export default function RootLayout({
