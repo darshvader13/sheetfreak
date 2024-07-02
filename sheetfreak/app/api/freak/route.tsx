@@ -14,20 +14,20 @@ export async function POST(req: Request) {
         console.log(sheet_id)
 
         //Production
-        const response = await axios.post('https://sheetfreak--sheetfreak-act.modal.run', {
-            task_prompt: task_prompt,
-            sheet_id: sheet_id,
-        }, {
-            responseType: 'stream',
-        })
-
-        //Development
-        // const response = await axios.post('https://sheetfreak--sheetfreak-act-dev.modal.run', {
+        // const response = await axios.post('https://sheetfreak--sheetfreak-act.modal.run', {
         //     task_prompt: task_prompt,
         //     sheet_id: sheet_id,
         // }, {
         //     responseType: 'stream',
         // })
+
+        //Development
+        const response = await axios.post('https://sheetfreak--sheetfreak-act-dev.modal.run', {
+            task_prompt: task_prompt,
+            sheet_id: sheet_id,
+        }, {
+            responseType: 'stream',
+        })
 
         const stream = response.data
         return new StreamingTextResponse(stream)
