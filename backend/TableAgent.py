@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import traceback
 from io import BytesIO
-from openpyxl import load_workbook
 
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
@@ -56,7 +55,7 @@ class TableAgent:
         share_link = file.get('webViewLink')
         return share_link
     
-    async def upload_user_sheets(self, file, sheet_range="Sheet1"):
+    async def upload_user_sheets(self, file):
         """Uploads user .xlsx or .csv to a Google Sheets file"""
         if file.filename.endswith('.xlsx'):
             mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -66,9 +65,9 @@ class TableAgent:
             return "Error: unsupported file type. Please upload .xlsx or .csv file."
    
         file_content = await file.read()
-        file_like_object = BytesIO(file_content)
+        file_bytes = BytesIO(file_content)
         
-        media = MediaIoBaseUpload(file_like_object, mimetype=mime_type, resumable=True)
+        media = MediaIoBaseUpload(file_bytes, mimetype=mime_type, resumable=True)
 
         file_metadata = {
             'name': file.filename + " w sheetfreak",
@@ -76,9 +75,18 @@ class TableAgent:
         }
 
         sheet = self.drive_service.files().create(body=file_metadata, media_body=media).execute()
-        self.sheet_id = sheet['id']
+        sheet_id = sheet["id"]
+        self.sheet_id = sheet_id
 
-        return self.copy_user_sheets(self.sheet_id, file.filename)
+        #Make file editable to anyone with the link
+        permission = {
+            'type': 'anyone',
+            'role': 'writer'
+        }
+        self.drive_service.permissions().create(fileId=sheet_id, body=permission).execute()
+        file = self.drive_service.files().get(fileId=sheet_id, fields='webViewLink').execute()
+        share_link = file.get('webViewLink')
+        return share_link
 
     def get_sheet_content(self, sheet_range):
         """Gets content of sheet ID"""
