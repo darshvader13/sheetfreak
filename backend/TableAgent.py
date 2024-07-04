@@ -92,7 +92,7 @@ class TableAgent:
         """Gets content of sheet ID"""
         read_sheet_result = (
             self.sheets_service.spreadsheets().values()
-            .get(spreadsheetId=self.sheet_id, range=sheet_range)
+            .get(spreadsheetId=self.sheet_id, range=sheet_range, valueRenderOption="FORMULA")
             .execute()
         )
         sheet_content = read_sheet_result.get("values", [])

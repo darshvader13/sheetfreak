@@ -111,7 +111,7 @@ export default function Act() {
               {sheetsUrl}
           </Link>
         }
-        <div ref={chatContainerRef}>
+        <div ref={chatContainerRef} className="pt-4">
           {messages.map((message, index) => (
             <div 
               key={index}
