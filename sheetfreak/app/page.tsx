@@ -25,8 +25,8 @@ const SheetfreakLandingPage = () => {
     for (let col = 65; col <= 65 + numCols; col++) {  // A to F
       for (let row = 1; row <= numRows; row++) {
         const cellId = `${String.fromCharCode(col)}${row}`
-        if (cellId === 'A1') {
-          cells[cellId] = 'sheetfreak'
+        if (cellId === 'C7') {
+          cells[cellId] = 'Your AI Data Analyst Intern'
         } else {
           cells[cellId] = ''
         }
@@ -43,17 +43,14 @@ const SheetfreakLandingPage = () => {
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    console.log("key down")
-    console.log(e.key)
-    if (e.key === 'Enter') {
-      // Move to the next row
+    if (e.key === 'Enter'|| e.key === 'ArrowDown') {
       const nextRow = (parseInt(activeCell.slice(1)) + 1)
       if (nextRow <= numRows) {
         const nextCellIndex = activeCell[0] + nextRow
         setActiveCell(nextCellIndex);
         cellRefs.current[nextCellIndex]?.focus();
       }
-    } else if (e.key === 'Tab') {
+    } else if (e.key === 'Tab' || e.key === 'ArrowRight') {
       e.preventDefault()
       let nextCol = activeCell[0].charCodeAt(0)+1
       if (nextCol <= 65 + numCols) {
@@ -64,8 +61,24 @@ const SheetfreakLandingPage = () => {
           setActiveCell(nextCellIndex);
         }
       } 
-    } else if (e.key.length === 1) {
-      console.log("char key down")
+    } else if (e.key === 'ArrowUp') {
+      const nextRow = (parseInt(activeCell.slice(1)) - 1)
+      if (nextRow >= 1) {
+        const nextCellIndex = activeCell[0] + nextRow
+        setActiveCell(nextCellIndex);
+        cellRefs.current[nextCellIndex]?.focus();
+      }
+    } else if (e.key === 'ArrowLeft') {
+      let nextCol = activeCell[0].charCodeAt(0)-1
+      if (nextCol >= 65) {
+        const nextCellCol = String.fromCharCode(nextCol)
+        const nextCellIndex = nextCellCol + activeCell.slice(1)
+        if (cellRefs.current[nextCellIndex]) {
+          cellRefs.current[nextCellIndex]?.focus();
+          setActiveCell(nextCellIndex);
+        }
+      } 
+    } else if (e.key.length === 1 || e.key === 'Backspace') {
       cellInputRefs.current[activeCell]?.focus()
     }
   }
@@ -111,7 +124,7 @@ const SheetfreakLandingPage = () => {
                         }
                       }}
                       tabIndex={0}
-                      className={`border ${activeCell === cellId ? 'bg-accent' : ''}`}
+                      className={`border ${activeCell === cellId ? 'bg-accent' : ''} text-sm`}
                       onClick={() => setActiveCell(cellId)}
                       onFocus={() => setActiveCell(cellId)}
                       onKeyDown={(e) => handleKeyDown(e)}
