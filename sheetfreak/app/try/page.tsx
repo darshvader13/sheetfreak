@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import Header from "@/components/ui/Header"
 
-export default function Home() {
+export default function Try() {
   const [url, setUrl] = useState('')
   const [isValidUrl, setIsValidUrl] = useState(false)
   const [file, setFile] = useState<File | null>(null)
@@ -75,23 +76,26 @@ export default function Home() {
   }
 
   return (
-    <div className="p-10 space-y-4">
-      <h1 className="pb-4 pl-2 font-bold text-2xl">sheetfreak</h1>
-      <Input
-        type="text"
-        value={url}
-        onChange={handleUrlChange}
-        placeholder="https://docs.google.com/spreadsheets/"
-      />
-      <Input
-        type="file"
-        onChange={handleFileChange}
-        accept=".xlsx,.csv"
-      />
-      <Button onClick={onSubmit}>
-        {isLoading ? <LoadingSpinner /> : 'Get freaky!'}
-      </Button>
-      <p>{invalidMessage}</p>
+    <div>
+      <Header />
+      <div className="pt-6 pl-10 space-y-4 pr-10">
+        <h1 className="px-2">Try sheetfreak on a Google Sheets share link or upload a .xlsx or .csv file!</h1>
+        <Input
+          type="text"
+          value={url}
+          onChange={handleUrlChange}
+          placeholder="https://docs.google.com/spreadsheets/"
+        />
+        <Input
+          type="file"
+          onChange={handleFileChange}
+          accept=".xlsx,.csv"
+        />
+        <Button onClick={onSubmit}>
+          {isLoading ? <LoadingSpinner /> : 'Get freaky!'}
+        </Button>
+        <p>{invalidMessage}</p>
+      </div>
     </div>
   )
 }
