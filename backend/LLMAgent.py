@@ -197,7 +197,7 @@ class LLMAgent:
         if instruction_type == "get_instructions":
             return ["types", "instructions"]
         elif instruction_type == "WRITE":
-            return ["rows", "columns", "values"]
+            return ["list_of_rows", "list_of_columns", "list_of_values"]
         elif instruction_type == "READ":
             return ["rows", "columns"]
         elif instruction_type == "CHART":
@@ -248,8 +248,8 @@ class LLMAgent:
         if instructions == None:
             yield get_chunk_to_yield("Error getting instructions")
             return
-        print_instructions = " ".join([instr[1] for instr in instructions])
-        yield get_chunk_to_yield(f"Plan: {print_instructions}")
+        print_instructions = "\n".join([instr[1] for instr in instructions])
+        yield get_chunk_to_yield(f"Plan:\n{print_instructions}")
 
         if "INAPPROPRIATE" in [instr[0] for instr in instructions]:
             yield get_chunk_to_yield(f"Sorry I can't help with: {task_prompt}")
@@ -297,6 +297,7 @@ class LLMAgent:
                         continue
                     if instruction_type == "WRITE":
                         need_to_push_sheet_content = True
+                        sheet_content = table_agent.get_sheet_content_current()
                     yield get_chunk_to_yield(result)
                     failed_all_attempts = False
                     break

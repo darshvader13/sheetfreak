@@ -74,7 +74,9 @@ def act(req: dict):
     if not sheet_id:
         return "No sheet ID provided"
     
-    agent = LLMAgent(default_call="claude")
+    agent = LLMAgent(default_call="claude", tools_to_models={"write_table": "gpt-4o"})
+
+    # TODO: Keep conversation history
     return StreamingResponse(
         agent.act_streamer(task_prompt, sheet_id, sheet_range), media_type="text/event-stream"
     )

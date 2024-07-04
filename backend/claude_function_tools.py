@@ -8,6 +8,8 @@ Function calling tools
 - claude_other_instruction
 """
 
+# TODO: make tool names, arg names more descriptive, it's prompting all the way down
+
 claude_get_instructions_tool = {
     "name": "get_instructions",
     "description": "Returns a list of lower level instructions consisting of read, write, chart, question, other, or inappropriate instructions.",
@@ -23,8 +25,8 @@ claude_get_instructions_tool = {
                 "maxItems": 100,
                 "description": """One word instruction summary. Must be one of the following: READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
                 Be concise, each instruction includes all of its related sub-instructions. For example, making a single write instruction includes the implicit read instructions needed. A single instruction to make a chart includes making all aspects of the chart to desired specifications.
-                READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
-                WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
+                READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet.
+                WRITE involves changing and inserting cell values. You already have the necessary information to manipulate values. You already have calculated everything you need to.
                 CHART involves creating only a basic chart (BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA). CHART also implictly reads and does not need to explicitly read values in.
                 QUESTION involves only questions about Google Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
                 OTHER involves Sheets operations that do not fit into READ, WRITE, CHART, or QUESTION operations, such as creating pivot tables or charts not listed in the CHART category (ex: pie chart). 
@@ -61,7 +63,7 @@ claude_write_table_tool = {
     "input_schema": {
         "type": "object",
         "properties": {
-            "rows": {
+            "list_of_rows": {
                 "type": "array",
                 "items": {
                     "type": "integer"
@@ -70,7 +72,7 @@ claude_write_table_tool = {
                 "maxItems": 100,
                 "description": "The 0-index rows of the values to write to",
             },
-            "columns": {
+            "list_of_columns": {
                 "type": "array",
                 "items": {
                     "type": "integer"
@@ -79,7 +81,7 @@ claude_write_table_tool = {
                 "maxItems": 100,
                 "description": "The 0-index columns of the values to write to",
             },
-            "values": {
+            "list_of_values": {
                 "type": "array",
                 "items": {
                     "type": "string"
@@ -89,14 +91,15 @@ claude_write_table_tool = {
                 "description": "The values to write at the rows and columns",
             },
         },
-        "required": ["rows", "columns", "values"],
+        "required": ["list_of_rows", "list_of_columns", "list_of_values"],
     }
 }
 
 claude_write_table_sys_message = """You are an expert assistant using Google Sheets.
     Given a table in a pandas dataframe representation and new-line separated instructions to write values to cells,
     return the function call to complete the writes as if the table is a Google Sheets. 
-    Each index of the returned lists should correspond to each instruction, so all the arrays should have the same length.
+    Return three lists, one of rows to write at, one of columns to write at, and one of values to write at the corresponding positions.
+    Each index of the returned lists should correspond to each instruction, so all the lists should have the same length.
     If a Google Sheets formula can be used, use the formula instead of hard-coding values or I will touch you."""
 
 claude_read_table_tool = {

@@ -97,9 +97,13 @@ class TableAgent:
         )
         sheet_content = read_sheet_result.get("values", [])
         sheet_content = pd.DataFrame(sheet_content)
-        print("Read values:", sheet_content)
         self.sheet_content = sheet_content
+        print("Read values:\n", sheet_content.to_string())
         return sheet_content.to_string()
+    
+    def get_sheet_content_current(self):
+        """Gets sheet content without reading sheet"""
+        return self.sheet_content.to_string()
     
     def push_sheet_content(self, sheet_range):
         """Writes sheet content back to online Google Sheets file"""

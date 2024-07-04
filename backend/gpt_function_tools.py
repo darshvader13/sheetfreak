@@ -8,6 +8,8 @@ Function calling tools
 - gpt_other_instruction
 """
 
+# TODO: make tool names, arg names more descriptive, it's prompting all the way down
+
 gpt_get_instructions_tool = {
     "type": "function",
     "function": {
@@ -68,7 +70,7 @@ gpt_write_table_tool = {
         "parameters": {
             "type": "object",
             "properties": {
-                "rows": {
+                "list_of_rows": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -77,7 +79,7 @@ gpt_write_table_tool = {
                     "maxItems": 100,
                     "description": "The 0-index rows of the values to write to",
                 },
-                "columns": {
+                "list_of_columns": {
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -86,7 +88,7 @@ gpt_write_table_tool = {
                     "maxItems": 100,
                     "description": "The 0-index columns of the values to write to",
                 },
-                "values": {
+                "list_of_values": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -96,7 +98,7 @@ gpt_write_table_tool = {
                     "description": "The values to write at the rows and columns",
                 },
             },
-            "required": ["rows", "columns", "values"],
+            "required": ["list_of_rows", "list_of_columns", "list_of_values"],
         },
     },
 }
@@ -105,7 +107,8 @@ gpt_write_table_sys_msg = {"role": "system",
                               "content": """You are an expert assistant using Google Sheets.
     Given a table in a pandas dataframe representation and new-line separated instructions to write values to cells,
     return the function call to complete the writes as if the table is a Google Sheets. 
-    Each index of the returned lists should correspond to each instruction, so all the arrays should have the same length.
+    Return three lists, one of rows to write at, one of columns to write at, and one of values to write at the corresponding positions.
+    Each index of the returned lists should correspond to each instruction, so all the lists should have the same length.
     If a Google Sheets formula can be used, use the formula instead of hard-coding values or I will touch you."""
 }
 

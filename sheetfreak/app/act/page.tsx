@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import Link from 'next/link'
+import Header from "@/components/ui/Header"
 
 const CHUNK_DELIMITER = "--END_CHUNK--"
 
@@ -97,57 +98,58 @@ export default function Act() {
   }
 
   return (
-    <div className="p-10">
-      <h1 className="pb-4 pl-2 font-bold text-2xl">Let&apos;s get freaky in your sheets!</h1>
-      {sheetsUrl !== "Error" && 
-        <p className="pb-4 pl-2">Google Sheets URL:&nbsp;
+    <div>
+      <Header />
+      <div className="p-10">
+        <h1 className="pb-4 pl-2 font-bold text-2xl">Let&apos;s get freaky in your sheets!</h1>
+        {sheetsUrl !== "Error" && 
           <Link
             href={sheetsUrl}
             rel="noopener noreferrer"
             target="_blank"
-            className="underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
+            className="pl-2 underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
               {sheetsUrl}
           </Link>
-        </p>
-      }
-      <div ref={chatContainerRef}>
-        {messages.map((message, index) => (
-          <div 
-            key={index}
-            style={{
-              marginBottom: '10px',
-              textAlign: message.sender === 'user' ? 'right' : 'left'
-            }}
-          >
-            <span
+        }
+        <div ref={chatContainerRef}>
+          {messages.map((message, index) => (
+            <div 
+              key={index}
               style={{
-                background: message.sender === 'user' ? '#007bff' : '#8a8a8a',
-                color: 'white',
-                padding: '5px 10px',
-                borderRadius: '10px',
-                display: 'inline-block',
-                whiteSpace: 'pre-line',
+                marginBottom: '10px',
+                textAlign: message.sender === 'user' ? 'right' : 'left'
               }}
             >
-                {message.text}
-            </span>
-          </div>
-        ))}
-      </div>
-      
-      <div style={{ display: 'flex' }}>
-        <Input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-          placeholder="Execute commands..."
-        />
-        <Button
-            onClick={handleSendMessage}
-        >
-          Send
-        </Button>
+              <span
+                style={{
+                  background: message.sender === 'user' ? '#007bff' : '#8a8a8a',
+                  color: 'white',
+                  padding: '5px 10px',
+                  borderRadius: '10px',
+                  display: 'inline-block',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                  {message.text}
+              </span>
+            </div>
+          ))}
+        </div>
+        
+        <div style={{ display: 'flex' }}>
+          <Input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Execute commands..."
+          />
+          <Button
+              onClick={handleSendMessage}
+          >
+            Send
+          </Button>
+        </div>
       </div>
     </div>
   );
