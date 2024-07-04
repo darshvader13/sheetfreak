@@ -74,7 +74,7 @@ def act(req: dict):
     if not sheet_id:
         return "No sheet ID provided"
     
-    agent = LLMAgent()
+    agent = LLMAgent(default_call="claude")
     return StreamingResponse(
         agent.act_streamer(task_prompt, sheet_id, sheet_range), media_type="text/event-stream"
     )
