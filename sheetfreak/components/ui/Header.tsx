@@ -10,7 +10,7 @@ export default function Header() {
             <div className="lg:flex lg:justify-between">
                 <div className="lg:flex lg:items-center">
                     <Image src="/logo.png" alt="logo" height="100" width="100"/>
-                    <h1 className="text-4xl font-bold text-primary tracking-tight">sheetfreak</h1>
+                    <h1 className="text-4xl font-bold text-primary tracking-tight"><Link href="/">sheetfreak</Link></h1>
                 </div>
                 <div className="lf:flex lg:justify-end space-x-2 pt-8">
                     <Link href="/login" className={`${buttonVariants({ variant: "outline" })} hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-300`}>Login</Link>
@@ -20,9 +20,9 @@ export default function Header() {
 
             {/* Spreadsheet Toolbar with Navigation Links */}
             <div className="flex items-center pb-4 pl-4 space-x-6 sm:pt-4">
-                <Link href="/" className="text-sm font-semibold hover:underline underline-offset-4">Features</Link>
-                <Link href="/pricing" className="text-sm font-semibold hover:underline underline-offset-4">Pricing</Link>
-                <Link href="/try" className="text-sm font-semibold hover:underline underline-offset-4">Try</Link>
+                <Link href="/" className="text-sm hover:underline underline-offset-4">Features</Link>
+                <Link href="/" className="text-sm hover:underline underline-offset-4">Pricing</Link>
+                <Link href="/try" className="text-sm hover:underline underline-offset-4">Try</Link>
             </div>
             </div>
             <hr></hr>

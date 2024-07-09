@@ -132,11 +132,11 @@ class TableAgent:
         print(f"Expanding table to {newRows+1} x {newCols+1}")
         if newCols >= currCols:
             for i in range(currCols, newCols+1):
-                self.sheet_content[i] = [pd.NA for _ in range(currRows)]
+                self.sheet_content[i] = [None for _ in range(currRows)]
             currCols = newCols+1
         if newRows >= currRows:
             for i in range(currRows, newRows + 1):
-                self.sheet_content.loc[i] = [pd.NA for _ in range(currCols)]
+                self.sheet_content.loc[i] = [None for _ in range(currCols)]
         return
 
     def write_table(self, args):

@@ -27,16 +27,36 @@ const SheetfreakLandingPage = () => {
     for (let col = 65; col <= 65 + numCols; col++) {  // A to F
       for (let row = 1; row <= numRows; row++) {
         const cellId = `${String.fromCharCode(col)}${row}`
-        if (cellId === 'C6') {
+        if (cellId === 'C1') {
           cells[cellId] = 'Your AI Data Analyst Intern'
-        } else if (cellId === 'C7') {
+        } else if (cellId === 'C2') {
           cells[cellId] = 'Supercharge Google Sheets or Excel'
-        } else if (cellId === 'B11') {
+        } else if (cellId === 'B4') {
           cells[cellId] = 'Features'
-        } else if (cellId === 'B12') {
+        } else if (cellId === 'B5') {
           cells[cellId] = 'Edit cell values'
-        } else if (cellId === 'B13') {
+        } else if (cellId === 'B6') {
+          cells[cellId] = 'Extract information'
+        } else if (cellId === 'B7') {
           cells[cellId] = 'Create charts'
+        } else if (cellId === 'B8') {
+          cells[cellId] = 'Summarize sheets'
+        } else if (cellId === 'B9') {
+          cells[cellId] = 'Ask questions'
+        } else if (cellId === 'C4') {
+          cells[cellId] = 'Loved by analysts'
+        } else if (cellId === 'C5') {
+          cells[cellId] = '@kile_sway: I literally made this ofc i love it'
+        } else if (cellId === 'C6') {
+          cells[cellId] = '@Google: i need this'
+        } else if (cellId === 'C7') {
+          cells[cellId] = '@Microsoft: it would take us five years to make this'
+        } else if (cellId === 'D4') {
+          cells[cellId] = 'FAQ'
+        } else if (cellId === 'D5') {
+          cells[cellId] = 'How much does it cost?'
+        } else if (cellId === 'D6') {
+          cells[cellId] = 'It is free for now'
         } else {
           cells[cellId] = ''
         }
@@ -50,7 +70,7 @@ const SheetfreakLandingPage = () => {
 
   const handleCellChange = (value: string) => {
     setCellValues(prev => ({ ...prev, [activeCell]: value }));
-  };
+  }
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Enter'|| e.key === 'ArrowDown') {
@@ -102,6 +122,30 @@ const SheetfreakLandingPage = () => {
     }
   }, [])
 
+  const getCellClassName = (cellId: string) => {
+    const baseClass = 'border p-0 relative'
+    const activeClass = activeCell === cellId ? 'bg-accent' : ''
+    const sizeClass = 
+      cellId === 'C1' ? 'font-bold text-emerald-600 text-6xl h-32' :
+      cellId === 'C2' ? 'font-bold text-emerald-600 text-xl h-10' :
+      cellId === 'B4' || cellId === 'C4' || cellId === 'D4' ? 'font-bold text-xl h-10' :
+      'text-sm';
+    const paddingClass = cellId === 'C3' ? 'p-0' : 'pl-2'
+    
+    return `${baseClass} ${activeClass} ${sizeClass} ${paddingClass}`.trim()
+  }
+
+  const getInputClassName = (cellId: string) => {
+    const baseClass = 'absolute inset-0 w-full h-full border-0 shadow-none focus:ring-0 rounded-none pl-2'
+    const sizeClass = 
+      cellId === 'C1' ? 'font-bold text-emerald-600 text-6xl h-32' :
+      cellId === 'C2' ? 'font-bold text-emerald-600 text-xl h-10' :
+      cellId === 'B4' || cellId === 'C4' || cellId === 'D4' ? 'font-bold text-xl h-10' :
+      'text-sm';
+    
+    return `${baseClass} ${sizeClass}`.trim()
+  }
+
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
       <Header />
@@ -143,40 +187,32 @@ const SheetfreakLandingPage = () => {
                         }
                       }}
                       tabIndex={0}
-                      className={`border
-                        ${activeCell === cellId ? 'bg-accent' : ''}
-                        ${cellId !== 'C6' && cellId !== 'C7' ? 'text-sm': ''}
-                        ${cellId === 'C6' ? 'font-bold text-emerald-600 text-6xl' : ''}
-                        ${cellId === 'C7' ? 'font-bold text-emerald-600 text-xl' : ''}
-                        ${cellId === 'B11' ? 'font-bold text-xl': ''}
-                      `}
+                      className={`${getCellClassName(cellId)}`}
                       onClick={() => setActiveCell(cellId)}
                       onFocus={() => setActiveCell(cellId)}
                       onKeyDown={(e) => handleKeyDown(e)}
                     >
-                      {activeCell === cellId && cellId !== 'C8' ? (
+                      {activeCell === cellId && cellId !== 'C3' ? (
                         <Input
                           ref={(el) => {
                             if (cellInputRefs.current) {
                               cellInputRefs.current[cellId] = el
                             }
                           }}
-                          className={`w-full h-full border-none focus:ring-0 rounded-none pl-0
-                            ${cellId !== 'C6' && cellId !== 'C7' ? 'text-sm' : ''}
-                            ${cellId === 'C6' ? 'font-bold text-emerald-600 text-6xl' : ''}
-                            ${cellId === 'C7' ? 'font-bold text-emerald-600 text-xl' : ''}
-                            ${cellId === 'B11' ? 'font-bold text-xl': ''}
-                            `}
+                          className={getInputClassName(cellId)}
                           value={cellValues[cellId]}
                           onChange={(e) => handleCellChange(e.target.value)}
                         />
+                      ) : cellId === 'C3' ? (
+                        <Link
+                          href="/try"
+                          className={`${buttonVariants({ variant: "outline" })}
+                          text-lg w-full bg-gradient-to-r from-emerald-800 via-emerald-500 to-blue-600 text-white
+                          hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-300`}>
+                          Try
+                        </Link>
                       ) : (
                         cellValues[cellId]
-                      )}
-                      {cellId === 'C8' ? (<Link href="/try" className={`${buttonVariants({ variant: "outline" })}
-                      text-lg w-full bg-gradient-to-r from-emerald-800 via-emerald-500 to-blue-600 text-white
-                      hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-300`}>Try</Link>) : (
-                        ''
                       )}
                     </td>
                   );

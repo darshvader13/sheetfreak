@@ -22,20 +22,6 @@ export default function Try() {
     setIsValidUrl(isValid)
   }
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0]
-      const fileType = selectedFile.name.split('.').pop()?.toLowerCase()
-      if (fileType === 'xlsx' || fileType === 'csv') {
-        setFile(selectedFile)
-        setInvalidMessage('')
-      } else {
-        setFile(null)
-        setInvalidMessage('Please upload a .xlsx or .csv file.')
-      }
-    }
-  }
-
   async function onSubmit() {
     setIsLoading(true)
     if (isValidUrl) {
@@ -47,7 +33,7 @@ export default function Try() {
         })
       })
       const new_url = await res.json()
-      if (new_url.data.startsWith("Please")) {
+      if (new_url.data.startsWith("Please") || new_url.data === ("Error")) {
         setInvalidMessage(new_url.data)
         setIsLoading(false)
       } else {
@@ -88,8 +74,8 @@ export default function Try() {
         />
         <Input
           type="file"
-          onChange={handleFileChange}
           accept=".xlsx,.csv"
+          className="w-fit"
         />
         <Button onClick={onSubmit}>
           {isLoading ? <LoadingSpinner /> : 'Get freaky!'}
