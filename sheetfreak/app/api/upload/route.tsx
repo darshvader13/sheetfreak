@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import axios from 'axios'
 
 export const maxDuration = 60
@@ -20,29 +20,21 @@ export async function POST(req: Request) {
         const modalFormData = new FormData()
         modalFormData.append('file', file)
 
-        //Production    
-        const response = await axios.post('https://sheetfreak--sheetfreak-upload.modal.run', modalFormData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-
-        //Development
-        // const response = await axios.post('https://sheetfreak--sheetfreak-upload-dev.modal.run', modalFormData, {
-        //     headers: {
-        //         'Content-Type': 'multipart/form-data'
-        //     }
-        // })
-        
-        console.log("Received status: ", response.status)
-        console.log("Response data: ", response.data)
-        return NextResponse.json({ data: response.data }, { status: 200 })
+        if (process.env.UPLOAD_API_ENDPOINT) {
+            const response = await axios.post('https://sheetfreak--sheetfreak-upload-dev.modal.run', modalFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            
+            console.log("Received status: ", response.status)
+            console.log("Response data: ", response.data)
+            return NextResponse.json({ data: response.data }, { status: 200 })
+        } else {
+            return NextResponse.json({ data: "Error" }, { status: 500 })
+        }
     } catch (err) {
         console.error("Error details:", err)
-        if (axios.isAxiosError(err) && err.response) {
-            console.error("Full error response:", JSON.stringify(err.response.data, null, 2));
-            return NextResponse.json({ error: err.response.data }, { status: err.response.status })
-        }
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+        return NextResponse.json({ error: "Error" }, { status: 500 })
     }
 }

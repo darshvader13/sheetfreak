@@ -13,26 +13,22 @@ export async function POST(req: Request) {
         console.log(task_prompt)
         console.log(sheet_id)
 
-        //Production
-        const response = await axios.post('https://sheetfreak--sheetfreak-act.modal.run', {
-            task_prompt: task_prompt,
-            sheet_id: sheet_id,
-        }, {
-            responseType: 'stream',
-        })
+        if (process.env.ACT_API_ENDPOINT) {
+            const response = await axios.post(process.env.ACT_API_ENDPOINT, {
+                task_prompt: task_prompt,
+                sheet_id: sheet_id,
+            }, {
+                responseType: 'stream',
+            })
 
-        //Development
-        // const response = await axios.post('https://sheetfreak--sheetfreak-act-dev.modal.run', {
-        //     task_prompt: task_prompt,
-        //     sheet_id: sheet_id,
-        // }, {
-        //     responseType: 'stream',
-        // })
-
-        const stream = response.data
-        return new StreamingTextResponse(stream)
+            const stream = response.data
+            return new StreamingTextResponse(stream)
+        } else {
+            return NextResponse.json({ data: "Error" }, { status: 500 })
+        }
+        
     } catch(err) {
-        console.log(err)
+        console.error("Error details:", err)
         return NextResponse.json({ data: "Error" }, { status: 500 })
     }
 }

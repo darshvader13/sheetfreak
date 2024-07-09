@@ -107,20 +107,24 @@ class TableAgent:
     
     def push_sheet_content(self, sheet_range):
         """Writes sheet content back to online Google Sheets file"""
-        write_sheet_body = {
-            "values": self.sheet_content.values.tolist()
-        }
-        write_sheet_result = (
-            self.sheets_service.spreadsheets().values()
-            .update(
-                spreadsheetId=self.sheet_id,
-                range=sheet_range,
-                valueInputOption="USER_ENTERED",
-                body=write_sheet_body,
+        try:
+            write_sheet_body = {
+                "values": self.sheet_content.values.tolist()
+            }
+            write_sheet_result = (
+                self.sheets_service.spreadsheets().values()
+                .update(
+                    spreadsheetId=self.sheet_id,
+                    range=sheet_range,
+                    valueInputOption="USER_ENTERED",
+                    body=write_sheet_body,
+                )
+                .execute()
             )
-            .execute()
-        )
-        print(write_sheet_result)
+            print(write_sheet_result)
+            return "Wrote to Google Sheets"
+        except:
+            return "Error writing to Google Sheets"
     
     def expand_table(self, newRows, newCols):
         """Expand the table to size newRows x newCols"""

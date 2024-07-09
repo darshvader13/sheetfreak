@@ -311,8 +311,8 @@ class LLMAgent:
                 yield get_chunk_to_yield("Failed instruction after all attempts")
         yield get_chunk_to_yield("Finished executing all instructions.")
         if need_to_push_sheet_content:
-            table_agent.push_sheet_content(sheet_range)
-            yield get_chunk_to_yield("Wrote to Google Sheets")
+            push_result = table_agent.push_sheet_content(sheet_range)
+            yield get_chunk_to_yield(push_result)
         return
 
 def get_chunk_to_yield(chunk):

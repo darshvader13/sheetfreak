@@ -10,21 +10,20 @@ export async function POST(req: Request) {
         console.log("API received")
         console.log(user_url)
 
-        //Production
-        const response = await axios.post('https://sheetfreak--sheetfreak-ingest.modal.run', {
-            google_sheets_link: user_url,
-        })
+        if (process.env.INGEST_API_ENDPOINT) {
+            const response = await axios.post(process.env.INGEST_API_ENDPOINT, {
+                google_sheets_link: user_url,
+            })
 
-        //Development
-        // const response = await axios.post('https://sheetfreak--sheetfreak-ingest-dev.modal.run', {
-        //     google_sheets_link: user_url,
-        // })
+            console.log("Received status: ", response.status)
+            console.log("Response data: ", response.data)
+            return NextResponse.json({ data: response.data }, { status: 200 })
+        } else {
+            return NextResponse.json({ data: "Error" }, { status: 500 })
+        }
         
-        console.log("Received status: ")
-        console.log(response.data)
-        return NextResponse.json({ data: response.data }, { status: 200 })
     } catch(err) {
-        console.log(err)
+        console.error("Error details:", err)
         return NextResponse.json({ data: "Error" }, { status: 500 })
     }
 }
