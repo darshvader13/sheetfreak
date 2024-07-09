@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 import json
 import traceback
 from io import BytesIO
@@ -97,6 +98,7 @@ class TableAgent:
         )
         sheet_content = read_sheet_result.get("values", [])
         sheet_content = pd.DataFrame(sheet_content)
+        sheet_content = sheet_content.replace({np.NaN: None})
         self.sheet_content = sheet_content
         print("Read values:\n", sheet_content.to_string())
         return sheet_content.to_string()

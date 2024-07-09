@@ -11,6 +11,7 @@ app = App("sheetfreak")
 image = (
     Image.debian_slim()
     .pip_install("pandas")
+    .pip_install("numpy")
     .pip_install("openpyxl")
     .pip_install("google-api-python-client")
     .pip_install("google-auth-httplib2")
