@@ -25,7 +25,7 @@ export default function Act() {
   useEffect(() => {
     // Scroll to the bottom of the chat container when messages update
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
   }, [messages]);
 
@@ -98,20 +98,20 @@ export default function Act() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col h-screen">
       <Header />
-      <div className="p-10">
-        <h1 className="pb-4 pl-2 font-bold text-2xl">Let&apos;s get freaky in your sheets!</h1>
-        {sheetsUrl !== "Error" && 
-          <Link
-            href={sheetsUrl}
-            rel="noopener noreferrer"
-            target="_blank"
-            className="pl-2 underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
-              {sheetsUrl}
-          </Link>
-        }
-        <div ref={chatContainerRef} className="pt-4">
+      <div className="p-10 flex flex-col grow overflow-hidden">
+          <h1 className="pl-2 font-bold text-2xl">Let&apos;s get freaky in your sheets!</h1>
+          {sheetsUrl !== "Error" && 
+            <Link
+              href={sheetsUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+              className="pl-2 underline text-blue-600 hover:text-blue-800 visited:text-purple-600">
+                {sheetsUrl}
+            </Link>
+          }
+        <div ref={chatContainerRef} className="pt-4 grow overflow-y-auto">
           {messages.map((message, index) => (
             <div 
               key={index}
@@ -135,8 +135,7 @@ export default function Act() {
             </div>
           ))}
         </div>
-        
-        <div style={{ display: 'flex' }}>
+        <div className="flex items-center">
           <Input
             type="text"
             value={inputMessage}

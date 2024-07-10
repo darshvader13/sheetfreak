@@ -25,19 +25,18 @@ export default function Try() {
   async function onSubmit() {
     setIsLoading(true)
     if (isValidUrl) {
-      // TODO: try/except this call for when API call errors and doesn't return something that starts with 'Please'
       const res = await fetch('/api/getfreaky', {
         method: 'POST',
         body: JSON.stringify({
           user_url: url,
         })
       })
-      const new_url = await res.json()
-      if (new_url.data.startsWith("Please") || new_url.data === ("Error")) {
-        setInvalidMessage(new_url.data)
+      const result = await res.json()
+      if (result.data.startsWith("Please") || result.data.includes(("Error"))) {
+        setInvalidMessage(result.data)
         setIsLoading(false)
       } else {
-        router.push(`/act?link=${encodeURIComponent(new_url.data)}`)
+        router.push(`/act?link=${encodeURIComponent(result.data)}`)
       }
     } else if (file) {
       const formData = new FormData()
@@ -49,11 +48,11 @@ export default function Try() {
       })
       
       const result = await res.json()
-      if (!result.data.includes("Error")) {
-        router.push(`/act?link=${encodeURIComponent(result.data)}`)
-      } else {
-        setInvalidMessage(result.data || 'Error uploading file')
+      if (result.data.includes("Error")) {
+        setInvalidMessage(result.data)
         setIsLoading(false)
+      } else {
+        router.push(`/act?link=${encodeURIComponent(result.data)}`)
       }
     } else {
       setInvalidMessage("Please enter a valid Google Sheets share link or upload an .xlsx/.csv file!")
