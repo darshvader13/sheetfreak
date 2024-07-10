@@ -68,6 +68,7 @@ def act(req: dict):
     task_prompt: str = req["task_prompt"]
     sheet_id: str = req["sheet_id"]
     sheet_range = "Sheet1"
+    messages: list = req["messages"]
 
     if not task_prompt:
         return "Please provide a task!"
@@ -79,7 +80,7 @@ def act(req: dict):
 
     # TODO: Keep conversation history
     return StreamingResponse(
-        agent.act_streamer(task_prompt, sheet_id, sheet_range), media_type="text/event-stream"
+        agent.act_streamer(task_prompt, sheet_id, sheet_range, messages), media_type="text/event-stream"
     )
     
     

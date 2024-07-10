@@ -223,7 +223,7 @@ class TableAgent:
                 return True, "", "Finished writing to table"
             elif instruction_type == "READ":
                 vals = self.read_table(args)
-                return True, "", vals
+                return True, "", str(vals)
             elif instruction_type == "CHART-gpt":
                 chart_req = self.get_chart_req(args[0])
                 self.create_chart(chart_req)

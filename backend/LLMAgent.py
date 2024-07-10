@@ -81,15 +81,53 @@ class LLMAgent:
                 print("Could not find LLM model to use")
         return ""
     
-    def call_gpt(self, model_ID, user_msg_content, tool_name):
+    def clean_messages(self, messages):
+        """Cleans messages received from user"""
+        if not messages:
+            return []
+        cleaned = []
+        fluff_messages = {"Starting...", "Finished reading in data..."}
+        for message in messages:
+            sender = message["sender"]
+            if sender == "user":
+                role = "user"
+            elif sender == "bot":
+                role = "assistant"
+            else:
+                print("Unrecognized message sender")
+                return
+            content = message["text"]
+            if role == "assistant":
+                if content in fluff_messages:
+                    continue
+            cleaned.append({"role": role, "content": content})
+
+        # Merge assistant messages (Claude does not allow multiple assistant messages in a row)
+        final = [cleaned[0]]
+        for message in cleaned[1:]:
+            if message["role"] == "assistant" and final[-1]["role"] == "assistant":
+                    final[-1]["content"] += "\n" + message["content"]
+            else:
+                final.append(message)
+        return final
+    
+    def add_assistant_message(self, messages: list, new_message: str):
+        """Add message to message history and merges assistant messages"""
+        if messages and messages[-1]["role"] == "assistant":
+            messages[-1]["content"] += "\n" + new_message
+        else:
+            messages.append({"role": "assistant", "content": new_message})
+        return messages
+    
+    def call_gpt(self, model_ID, user_msg_content, tool_name, messages):
         """Call GPT on OpenAI"""
         tool, sys_msg = gpt_tools["gpt_" + tool_name]
         user_msg = {
             "role": "user",
             "content": user_msg_content
         }
-        messages = [sys_msg, user_msg]
-
+        messages = [sys_msg] + messages + [user_msg]
+        print(messages)
         response = self.openai_client.chat.completions.create(
             model=model_ID,
             messages=messages,
@@ -99,10 +137,11 @@ class LLMAgent:
         print(response.choices[0].message)
         return response.choices[0].message
     
-    def call_claude(self, model_ID, user_msg_content, tool_name):
+    def call_claude(self, model_ID, user_msg_content, tool_name, messages):
         """Call Claude on AWS Bedrock"""
         tool, sys_msg = claude_tools["claude_" + tool_name]
-        messages = [{"role": "user", "content": user_msg_content}]
+        messages = messages + [{"role": "user", "content": user_msg_content}]
+        print(messages)
         body = json.dumps({
             "anthropic_version": "bedrock-2023-05-31",
             "system": sys_msg,
@@ -117,7 +156,7 @@ class LLMAgent:
         print(response_body['content'])
         return response_body['content']
 
-    def get_instruction_args(self, tool_name, task, sheet_content, args_names, prev_response, prev_response_error):
+    def get_instruction_args(self, tool_name, task, sheet_content, args_names, messages, prev_response, prev_response_error):
         """Gets instructions arguments.
         Returns success bool, error message, and args.
         """
@@ -130,7 +169,7 @@ class LLMAgent:
         model_ID = self.get_model_ID(tool_name)
         print("Using model:", model_ID)
         if model_ID.startswith("gpt"):
-            gpt_response = self.call_gpt(model_ID, user_msg, tool_name)
+            gpt_response = self.call_gpt(model_ID, user_msg, tool_name, messages)
             tool_calls = gpt_response.tool_calls
             args_collection = [None for _ in range(len(args_names))]
             for i in range(len(tool_calls)):
@@ -160,7 +199,7 @@ class LLMAgent:
             print("Args zipped:", instruction_args)
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
-            claude_response = self.call_claude(model_ID, user_msg, tool_name)
+            claude_response = self.call_claude(model_ID, user_msg, tool_name, messages)
             args_collection = {}
             for item in claude_response:
                 if item['type'] == "tool_use":
@@ -207,7 +246,7 @@ class LLMAgent:
         elif instruction_type == "OTHER":
             return ["body"]
     
-    def act_streamer(self, task_prompt: str, sheet_id: str, sheet_range: str):
+    def act_streamer(self, task_prompt: str, sheet_id: str, sheet_range: str, messages: list):
         """Attempts to complete given task prompt and streams outputs"""
         try:
             table_agent = TableAgent(sheet_id)
@@ -219,6 +258,8 @@ class LLMAgent:
             yield get_chunk_to_yield("Error reading data")
             return
         
+        messages = self.clean_messages(messages)
+        
         # 1. Get instructions
         prev_response = None
         prev_response_error = None
@@ -226,7 +267,7 @@ class LLMAgent:
         for attempt_num in range(1, self.max_attempts+1):
             try:
                 print(f"Attempt {attempt_num} of get_instructions")
-                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, self.get_arg_names("get_instructions"), prev_response, prev_response_error)
+                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, self.get_arg_names("get_instructions"), messages, prev_response, prev_response_error)
                 if not success:
                     assert(type(error_msg) == type(args) == str)
                     prev_response = args
@@ -248,18 +289,22 @@ class LLMAgent:
         if instructions == None:
             yield get_chunk_to_yield("Error getting instructions")
             return
-        print_instructions = "\n".join([instr[1] for instr in instructions])
-        yield get_chunk_to_yield(f"Plan:\n{print_instructions}")
+        print_instructions = "Plan:\n" + "\n".join([instr[1] for instr in instructions])
+        yield get_chunk_to_yield(print_instructions)
 
         if "INAPPROPRIATE" in [instr[0] for instr in instructions]:
             yield get_chunk_to_yield(f"Sorry I can't help with: {task_prompt}")
             return
+        
+        messages = self.add_assistant_message(messages, print_instructions)
 
         # 2. Execute instructions
         need_to_push_sheet_content = False
         for instruction in instructions:
             print("Executing", instruction)
             yield get_chunk_to_yield(f"Executing...\n{instruction[1]}")
+            messages = self.add_assistant_message(messages, f"Executing...\n{instruction[1]}")
+
             prev_response = None
             prev_response_error = None
             failed_all_attempts = True
@@ -272,7 +317,7 @@ class LLMAgent:
                         print("Unrecognized instruction type")
                         break
                     
-                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, self.get_arg_names(instruction_type), prev_response, prev_response_error)
+                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, self.get_arg_names(instruction_type), messages, prev_response, prev_response_error)
                     if not success:
                         assert(type(error_msg) == type(args) == str)
                         prev_response = args
@@ -299,6 +344,7 @@ class LLMAgent:
                         need_to_push_sheet_content = True
                         sheet_content = table_agent.get_sheet_content_current()
                     yield get_chunk_to_yield(result)
+                    messages = self.add_assistant_message(messages, result)
                     failed_all_attempts = False
                     break
                 except:
@@ -309,6 +355,7 @@ class LLMAgent:
                     continue
             if failed_all_attempts:
                 yield get_chunk_to_yield("Failed instruction after all attempts")
+                messages = self.add_assistant_message(messages, "Failed instruction after all attempts")
         yield get_chunk_to_yield("Finished executing all instructions.")
         if need_to_push_sheet_content:
             push_result = table_agent.push_sheet_content(sheet_range)

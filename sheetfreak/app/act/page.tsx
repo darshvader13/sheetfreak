@@ -4,15 +4,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Message } from "@/components/interfaces/interfaces"
 import Link from 'next/link'
 import Header from "@/components/ui/Header"
 
 const CHUNK_DELIMITER = "--END_CHUNK--"
-
-interface Message {
-    text: string;
-    sender: string;
-}
 
 export default function Act() {
   const searchParams = useSearchParams()
@@ -52,9 +48,13 @@ export default function Act() {
         setMessages(prevMessages => [...prevMessages, { text: "Starting...", sender: 'bot' }])
         const res = await fetch('/api/freak', {
             method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
-            task_prompt: inputMessage,
-            sheet_id: sheetsId,
+              task_prompt: inputMessage,
+              sheet_id: sheetsId,
+              messages: messages,
             })
         })
         const reader = res.body?.getReader()
