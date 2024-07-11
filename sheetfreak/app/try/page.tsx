@@ -22,6 +22,20 @@ export default function Try() {
     setIsValidUrl(isValid)
   }
 
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const selectedFile = e.target.files[0]
+      const fileType = selectedFile.name.split('.').pop()?.toLowerCase()
+      if (fileType === 'xlsx' || fileType === 'csv') {
+        setFile(selectedFile)
+        setInvalidMessage('')
+      } else {
+        setFile(null)
+        setInvalidMessage('Please upload only .xlsx or .csv files.')
+      }
+    }
+  }
+
   async function onSubmit() {
     setIsLoading(true)
     if (isValidUrl) {
@@ -73,6 +87,7 @@ export default function Try() {
         />
         <Input
           type="file"
+          onChange={handleFileChange}
           accept=".xlsx,.csv"
           className="w-fit"
         />
