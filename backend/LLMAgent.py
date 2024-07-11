@@ -156,7 +156,7 @@ class LLMAgent:
         print(response_body['content'])
         return response_body['content']
 
-    def get_instruction_args(self, tool_name, task, sheet_content, args_names, messages, prev_response, prev_response_error, table_agent):
+    def get_instruction_args(self, tool_name, task, sheet_content, sheet_range, args_names, messages, prev_response, prev_response_error):
         """Gets instructions arguments.
         Returns success bool, error message, and args.
         """
@@ -199,8 +199,8 @@ class LLMAgent:
             print("Args zipped:", instruction_args)
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
-            if "chart" in tool_name and table_agent.sheets and table_agent.sheets[0] != 0:
-                user_msg += " The sheet id is: " + str(table_agent.sheets[0])
+            if "chart" in tool_name:
+                user_msg += " The sheet id is: " + sheet_range
             claude_response = self.call_claude(model_ID, user_msg, tool_name, messages)
             args_collection = {}
             for item in claude_response:
@@ -248,11 +248,13 @@ class LLMAgent:
         elif instruction_type == "OTHER":
             return ["body"]
     
-    def act_streamer(self, task_prompt: str, sheet_id: str, sheet_range: str, messages: list):
+    def act_streamer(self, task_prompt: str, sheet_id: str, messages: list):
         """Attempts to complete given task prompt and streams outputs"""
         try:
             table_agent = TableAgent(sheet_id)
+            sheet_range = table_agent.get_sheets_names()[0]
             sheet_content = table_agent.get_sheet_content(sheet_range)
+
             yield get_chunk_to_yield("Finished reading in data...")
         except:
             error_details = traceback.format_exc()
@@ -269,7 +271,7 @@ class LLMAgent:
         for attempt_num in range(1, self.max_attempts+1):
             try:
                 print(f"Attempt {attempt_num} of get_instructions")
-                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, self.get_arg_names("get_instructions"), messages, prev_response, prev_response_error, table_agent)
+                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, sheet_range, self.get_arg_names("get_instructions"), messages, prev_response, prev_response_error)
                 if not success:
                     assert(type(error_msg) == type(args) == str)
                     prev_response = args
@@ -298,6 +300,8 @@ class LLMAgent:
             yield get_chunk_to_yield(f"Sorry I can't help with: {task_prompt}")
             return
         
+        if not messages:
+            messages = [{"role": "user", "content": task_prompt}]
         messages = self.add_assistant_message(messages, print_instructions)
 
         # 2. Execute instructions
@@ -319,7 +323,7 @@ class LLMAgent:
                         print("Unrecognized instruction type")
                         break
                     
-                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, self.get_arg_names(instruction_type), messages, prev_response, prev_response_error, table_agent)
+                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, sheet_range, self.get_arg_names(instruction_type), messages, prev_response, prev_response_error)
                     if not success:
                         assert(type(error_msg) == type(args) == str)
                         prev_response = args

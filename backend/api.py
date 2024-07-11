@@ -70,10 +70,6 @@ def act(req: dict):
     sheet_id: str = req["sheet_id"]
     messages: list = req["messages"]
 
-    table_agent = TableAgent()
-    user_sheets_title = table_agent.get_sheets_names(sheet_id)[0]
-    sheet_range = user_sheets_title #may change due to file upload and user input
-
     if not task_prompt:
         return "Please provide a task!"
     
@@ -83,7 +79,7 @@ def act(req: dict):
     agent = LLMAgent(default_call="claude", tools_to_models={"write_table": "gpt-4o"})
 
     return StreamingResponse(
-        agent.act_streamer(task_prompt, sheet_id, sheet_range, messages), media_type="text/event-stream"
+        agent.act_streamer(task_prompt, sheet_id, messages), media_type="text/event-stream"
     )
     
     

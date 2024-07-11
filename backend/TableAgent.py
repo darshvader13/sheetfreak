@@ -46,6 +46,7 @@ class TableAgent:
 
         copied_sheet_id = copied_sheet.get("id")
         self.spreadsheet_id = copied_sheet_id
+        self.sheets = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
         print("Copied sheet ID:", copied_sheet_id)
         
         permission = {
@@ -91,6 +92,12 @@ class TableAgent:
 
     def get_sheet_content(self, sheet_range):
         """Gets content of sheet ID"""
+        if not self.sheets:
+            print("No sheets found!")
+            return
+        elif sheet_range not in self.sheets:
+            print("Unrecognized sheet name!")
+            return
         read_sheet_result = (
             self.sheets_service.spreadsheets().values()
             .get(spreadsheetId=self.spreadsheet_id, range=sheet_range, valueRenderOption="FORMULA")
@@ -101,18 +108,22 @@ class TableAgent:
         sheet_content = sheet_content.replace({np.NaN: None})
         self.sheet_content = sheet_content
         print("Read values:\n", sheet_content.to_string())
-        if not self.sheets:
-            self.sheets = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
         return sheet_content.to_string()
     
     def get_sheet_content_current(self):
         """Gets sheet content without reading sheet"""
         return self.sheet_content.to_string()
     
-    def get_sheets_names(self, spreadsheet_id):
-        """Gets sheet content without reading sheet"""
-        return [s['properties']['title'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()['sheets']]
+    def get_sheets_names(self):
+        """Gets sheet names"""
+        self.sheets = [s['properties']['title'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
+        print("Found sheets:", self.sheets)
+        return self.sheets
     
+    def get_sheets_names_current(self):
+        """Gets sheet names without reading sheet"""
+        return self.sheets
+
     def push_sheet_content(self, sheet_range):
         """Writes sheet content back to online Google Sheets file"""
         try:
