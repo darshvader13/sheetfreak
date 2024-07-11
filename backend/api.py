@@ -67,7 +67,7 @@ def act(req: dict):
     """Given the task prompt and sheet ID, execute the instructions"""
     task_prompt: str = req["task_prompt"]
     sheet_id: str = req["sheet_id"]
-    sheet_range = "Sheet1"
+    sheet_range = "Sheet1" #may change due to file upload and user input
     messages: list = req["messages"]
 
     if not task_prompt:

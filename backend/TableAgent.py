@@ -42,6 +42,7 @@ class TableAgent:
             fileId=user_sheets_id,
             body=request_body
         ).execute()
+
         copied_sheet_id = copied_sheet.get("id")
         self.sheet_id = copied_sheet_id
         print("Copied sheet ID:", copied_sheet_id)
@@ -76,7 +77,8 @@ class TableAgent:
         }
 
         sheet = self.drive_service.files().create(body=file_metadata, media_body=media).execute()
-        sheet_id = sheet["id"]
+        sheet_id = sheet.get("id")
+        print("Created sheet ID:", sheet_id)
         self.sheet_id = sheet_id
 
         #Make file editable to anyone with the link
@@ -210,9 +212,7 @@ class TableAgent:
     def other_instruction(self, args):
         """Performs other instruction via spreadsheets.batchUpdate()"""
         print("Executing other instruction with", args)
-        other_instruction_response = self.sheets_service.spreadsheets().batchUpdate(
-            spreadsheetId=self.sheet_id, body=args[0]
-            ).execute()
+        other_instruction_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=args[0]).execute()
         print("Finished operation", other_instruction_response)
     
     def execute_instruction(self, instruction_type, args):
