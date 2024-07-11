@@ -1,0 +1,3 @@
+ACT_API_ENDPOINT = 'https://sheetfreak--sheetfreak-act-dev.modal.run'
+INGEST_API_ENDPOINT = 'https://sheetfreak--sheetfreak-ingest-dev.modal.run'
+UPLOAD_API_ENDPOINT = 'https://sheetfreak--sheetfreak-upload-dev.modal.run'
