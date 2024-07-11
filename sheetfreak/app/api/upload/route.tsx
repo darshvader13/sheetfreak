@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         modalFormData.append('file', file)
 
         if (process.env.UPLOAD_API_ENDPOINT) {
-            const response = await axios.post('https://sheetfreak--sheetfreak-upload-dev.modal.run', modalFormData, {
+            const response = await axios.post(process.env.UPLOAD_API_ENDPOINT, modalFormData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }

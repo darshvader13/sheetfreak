@@ -20,9 +20,9 @@ export default function Header() {
 
             {/* Spreadsheet Toolbar with Navigation Links */}
             <div className="flex items-center pb-4 pl-4 space-x-6 sm:pt-4">
+                <Link href="/try" className="text-sm hover:underline underline-offset-4">Try</Link>
                 <Link href="/" className="text-sm hover:underline underline-offset-4">Features</Link>
                 <Link href="/" className="text-sm hover:underline underline-offset-4">Pricing</Link>
-                <Link href="/try" className="text-sm hover:underline underline-offset-4">Try</Link>
             </div>
             </div>
             <hr></hr>
