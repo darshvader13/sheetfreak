@@ -57,7 +57,7 @@ class TableAgent:
         share_link = file.get('webViewLink')
         return share_link
     
-    async def upload_user_sheets(self, file):
+    def upload_user_sheets(self, file):
         """Uploads user .xlsx or .csv to a Google Sheets file"""
         if file.filename.endswith('.xlsx'):
             mime_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -66,7 +66,7 @@ class TableAgent:
         else:
             return "Error: unsupported file type. Please upload .xlsx or .csv file."
    
-        file_content = await file.read()
+        file_content = file.read()
         file_bytes = BytesIO(file_content)
         
         media = MediaIoBaseUpload(file_bytes, mimetype=mime_type, resumable=True)

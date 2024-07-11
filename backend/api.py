@@ -31,7 +31,7 @@ async def upload(file: UploadFile = File(...)):
     """Upload a file (.xlsx or .csv), convert to DataFrame, and save as Google Sheet"""
     try:
         table_agent = TableAgent()
-        return await table_agent.upload_user_sheets(file)
+        return table_agent.upload_user_sheets(file)
     except:
         error_details = traceback.format_exc()
         print(f"Error: {error_details}")
