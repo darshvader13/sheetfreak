@@ -156,7 +156,7 @@ class LLMAgent:
         print(response_body['content'])
         return response_body['content']
 
-    def get_instruction_args(self, tool_name, task, sheet_content, args_names, messages, prev_response, prev_response_error):
+    def get_instruction_args(self, tool_name, task, sheet_content, args_names, messages, prev_response, prev_response_error, table_agent):
         """Gets instructions arguments.
         Returns success bool, error message, and args.
         """
@@ -199,6 +199,8 @@ class LLMAgent:
             print("Args zipped:", instruction_args)
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
+            if "chart" in tool_name and table_agent.sheets and table_agent.sheets[0] != 0:
+                user_msg += " The sheet id is: " + str(table_agent.sheets[0])
             claude_response = self.call_claude(model_ID, user_msg, tool_name, messages)
             args_collection = {}
             for item in claude_response:
@@ -267,7 +269,7 @@ class LLMAgent:
         for attempt_num in range(1, self.max_attempts+1):
             try:
                 print(f"Attempt {attempt_num} of get_instructions")
-                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, self.get_arg_names("get_instructions"), messages, prev_response, prev_response_error)
+                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, self.get_arg_names("get_instructions"), messages, prev_response, prev_response_error, table_agent)
                 if not success:
                     assert(type(error_msg) == type(args) == str)
                     prev_response = args
@@ -317,7 +319,7 @@ class LLMAgent:
                         print("Unrecognized instruction type")
                         break
                     
-                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, self.get_arg_names(instruction_type), messages, prev_response, prev_response_error)
+                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, self.get_arg_names(instruction_type), messages, prev_response, prev_response_error, table_agent)
                     if not success:
                         assert(type(error_msg) == type(args) == str)
                         prev_response = args

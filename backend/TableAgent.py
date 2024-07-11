@@ -12,7 +12,8 @@ from googleapiclient.http import MediaIoBaseUpload
 class TableAgent:
     """TableAgent is the agent responsible for manipulating the underlying table"""
     def __init__(self, sheet_id = -1):
-        self.sheet_id = sheet_id
+        self.spreadsheet_id = sheet_id
+        self.sheets = []
         self.sheet_content = None
         creds_json = json.loads(os.environ["GOOGLE_CREDS_CRICK"])
         creds = Credentials(creds_json['token'],
@@ -44,10 +45,9 @@ class TableAgent:
         ).execute()
 
         copied_sheet_id = copied_sheet.get("id")
-        self.sheet_id = copied_sheet_id
+        self.spreadsheet_id = copied_sheet_id
         print("Copied sheet ID:", copied_sheet_id)
         
-        #Make file editable to anyone with the link
         permission = {
             'type': 'anyone',
             'role': 'writer'
@@ -77,17 +77,15 @@ class TableAgent:
         }
 
         sheet = self.drive_service.files().create(body=file_metadata, media_body=media).execute()
-        sheet_id = sheet.get("id")
-        print("Created sheet ID:", sheet_id)
-        self.sheet_id = sheet_id
+        self.spreadsheet_id = sheet["id"]
+        self.sheets = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
 
-        #Make file editable to anyone with the link
         permission = {
             'type': 'anyone',
             'role': 'writer'
         }
-        self.drive_service.permissions().create(fileId=sheet_id, body=permission).execute()
-        file = self.drive_service.files().get(fileId=sheet_id, fields='webViewLink').execute()
+        self.drive_service.permissions().create(fileId=self.spreadsheet_id, body=permission).execute()
+        file = self.drive_service.files().get(fileId=self.spreadsheet_id, fields='webViewLink').execute()
         share_link = file.get('webViewLink')
         return share_link
 
@@ -95,7 +93,7 @@ class TableAgent:
         """Gets content of sheet ID"""
         read_sheet_result = (
             self.sheets_service.spreadsheets().values()
-            .get(spreadsheetId=self.sheet_id, range=sheet_range, valueRenderOption="FORMULA")
+            .get(spreadsheetId=self.spreadsheet_id, range=sheet_range, valueRenderOption="FORMULA")
             .execute()
         )
         sheet_content = read_sheet_result.get("values", [])
@@ -103,11 +101,17 @@ class TableAgent:
         sheet_content = sheet_content.replace({np.NaN: None})
         self.sheet_content = sheet_content
         print("Read values:\n", sheet_content.to_string())
+        if not self.sheets:
+            self.sheets = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
         return sheet_content.to_string()
     
     def get_sheet_content_current(self):
         """Gets sheet content without reading sheet"""
         return self.sheet_content.to_string()
+    
+    def get_sheets_names(self, spreadsheet_id):
+        """Gets sheet content without reading sheet"""
+        return [s['properties']['title'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()['sheets']]
     
     def push_sheet_content(self, sheet_range):
         """Writes sheet content back to online Google Sheets file"""
@@ -118,7 +122,7 @@ class TableAgent:
             write_sheet_result = (
                 self.sheets_service.spreadsheets().values()
                 .update(
-                    spreadsheetId=self.sheet_id,
+                    spreadsheetId=self.spreadsheet_id,
                     range=sheet_range,
                     valueInputOption="USER_ENTERED",
                     body=write_sheet_body,
@@ -206,13 +210,13 @@ class TableAgent:
     def create_chart(self, req):
         """Creates a chart"""
         print("Creating chart with", req)
-        create_chart_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=req).execute()
+        create_chart_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheet_id, body=req).execute()
         print("Finished operation", create_chart_response)
     
     def other_instruction(self, args):
         """Performs other instruction via spreadsheets.batchUpdate()"""
         print("Executing other instruction with", args)
-        other_instruction_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.sheet_id, body=args[0]).execute()
+        other_instruction_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheet_id, body=args[0]).execute()
         print("Finished operation", other_instruction_response)
     
     def execute_instruction(self, instruction_type, args):

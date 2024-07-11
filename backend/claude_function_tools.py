@@ -22,7 +22,7 @@ claude_get_instructions_tool = {
                     "type": "string",
                 },
                 "minItems": 1,
-                "maxItems": 100,
+                "maxItems": 1000,
                 "description": """One word instruction summary. Must be one of the following: READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
                 Be concise, each instruction includes all of its related sub-instructions. For example, making a single write instruction includes the implicit read instructions needed. A single instruction to make a chart includes making all aspects of the chart to desired specifications.
                 READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet.
@@ -38,7 +38,7 @@ claude_get_instructions_tool = {
                     "type": "string",
                 },
                 "minItems": 1,
-                "maxItems": 100,
+                "maxItems": 1000,
                 "description": "One sentence low-level instruction description",
             }
         },
@@ -69,7 +69,7 @@ claude_write_table_tool = {
                     "type": "integer"
                 },
                 "minItems": 1,
-                "maxItems": 100,
+                "maxItems": 1000,
                 "description": "The 0-index rows of the values to write to",
             },
             "list_of_columns": {
@@ -78,7 +78,7 @@ claude_write_table_tool = {
                     "type": "integer"
                 },
                 "minItems": 1,
-                "maxItems": 100,
+                "maxItems": 1000,
                 "description": "The 0-index columns of the values to write to",
             },
             "list_of_values": {
@@ -87,7 +87,7 @@ claude_write_table_tool = {
                     "type": "string"
                 },
                 "minItems": 1,
-                "maxItems": 100,
+                "maxItems": 1000,
                 "description": "The values to write at the rows and columns",
             },
         },
@@ -114,7 +114,7 @@ claude_read_table_tool = {
                     "type": "integer"
                 },
                 "minItems": 1,
-                "maxItems": 100,
+                "maxItems": 1000,
                 "description": "The 0-index rows of the values to get",
             },
             "columns": {
@@ -123,7 +123,7 @@ claude_read_table_tool = {
                     "type": "integer"
                 },
                 "minItems": 1,
-                "maxItems": 100,
+                "maxItems": 1000,
                 "description": "The 0-index columns of the values to get",
             },
         },
@@ -147,14 +147,14 @@ claude_create_chart_tool = {
                 "description": "The argument to pass to the Google Sheets spreadsheets batchUpdate() API endpoint to create a chart",
             },
         },
-        "required": ["chart_arg",],
+        "required": ["chart_arg"],
     }
 }
 
 claude_create_chart_sys_message = """You are an expert assistant using Google Sheets through the Google Sheets API.
 Given the specifications to make a graph using the Google Sheets API's spreadsheets batchUpdate() endpoint,
 return the correct argument to pass to the API to create a graph or chart based on the given specifications.
-Set default values for any other parameter you need."""
+Set default values for any other parameter you need. If sheetID is given in user message, use it."""
 
 claude_question_tool = {
     "name": "question",

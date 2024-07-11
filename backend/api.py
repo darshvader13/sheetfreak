@@ -68,8 +68,11 @@ def act(req: dict):
     """Given the task prompt and sheet ID, execute the instructions"""
     task_prompt: str = req["task_prompt"]
     sheet_id: str = req["sheet_id"]
-    sheet_range = "Sheet1" #may change due to file upload and user input
     messages: list = req["messages"]
+
+    table_agent = TableAgent()
+    user_sheets_title = table_agent.get_sheets_names(sheet_id)[0]
+    sheet_range = user_sheets_title #may change due to file upload and user input
 
     if not task_prompt:
         return "Please provide a task!"

@@ -22,7 +22,7 @@ get_instructions_tool = {
                         "type": "string",
                     },
                     "minItems": 1,
-                    "maxItems": 100,
+                    "maxItems": 1000,
                     "description": """One word instruction summary. Must be one of the following: READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
                     READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
                     WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
@@ -38,7 +38,7 @@ get_instructions_tool = {
                         "type": "string",
                     },
                     "minItems": 1,
-                    "maxItems": 100,
+                    "maxItems": 1000,
                     "description": "One sentence low-level instruction description",
                 }
             },
@@ -75,7 +75,7 @@ update_table_tool = {
                         "type": "integer"
                     },
                     "minItems": 1,
-                    "maxItems": 100,
+                    "maxItems": 1000,
                     "description": "The 0-index rows of the values to update",
                 },
                 "columns": {
@@ -84,7 +84,7 @@ update_table_tool = {
                         "type": "integer"
                     },
                     "minItems": 1,
-                    "maxItems": 100,
+                    "maxItems": 1000,
                     "description": "The 0-index columns of the values to update",
                 },
                 "values": {
@@ -93,7 +93,7 @@ update_table_tool = {
                         "type": "string"
                     },
                     "minItems": 1,
-                    "maxItems": 100,
+                    "maxItems": 1000,
                     "description": "The values to update at the rows and columns",
                 },
             },
@@ -272,7 +272,7 @@ read_table_tool = {
                         "type": "integer"
                     },
                     "minItems": 1,
-                    "maxItems": 100,
+                    "maxItems": 1000,
                     "description": "The 0-index rows of the values to get",
                 },
                 "columns": {
@@ -281,7 +281,7 @@ read_table_tool = {
                         "type": "integer"
                     },
                     "minItems": 1,
-                    "maxItems": 100,
+                    "maxItems": 1000,
                     "description": "The 0-index columns of the values to get",
                 },
             },

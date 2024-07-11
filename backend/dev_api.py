@@ -22,7 +22,7 @@ def home():
     agent.set_tools_to_models("create_chart", "claude-3.5")
     task_prompt = "Create a blue line graph of the first two columns"
     sheet_id = ""
-    sheet_range = "Sheet1"
+    sheet_range = "Sheet1" #may change due to file upload and user input
     return StreamingResponse(
         agent.act_streamer(task_prompt, sheet_id, sheet_range), media_type="text/event-stream"
     )
