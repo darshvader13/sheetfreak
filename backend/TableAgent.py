@@ -93,10 +93,10 @@ class TableAgent:
 
     def get_sheet_content(self, sheet_range):
         """Gets content of sheet ID"""
-        if not self.sheets:
+        if not self.sheets_names:
             print("No sheets found!")
             return
-        elif sheet_range not in self.sheets:
+        elif sheet_range not in self.sheets_names:
             print("Unrecognized sheet name!")
             return
         read_sheet_result = (
