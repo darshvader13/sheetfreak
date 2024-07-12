@@ -272,7 +272,7 @@ class TableAgent:
                 self.create_chart(chart_req)
                 return True, "", "Created chart"
             elif instruction_type == "EDIT":
-                chart_req = {"requests": [json.loads(args[0])]}
+                chart_req = {"requests": [{"updateChartSpec": json.loads(args[0])}]}
                 self.edit_chart(chart_req)
                 return True, "", "Edited chart"
             elif instruction_type == "QUESTION":

@@ -170,7 +170,7 @@ claude_edit_chart_tool = {
         "properties": {
             "chart_arg": {
                 "type": "string",
-                "description": "The updateChartSpec argument to pass as a request to the Google Sheets spreadsheets batchUpdate() API endpoint to edit a chart",
+                "description": "The complete updateChartSpec argument to pass as a request to the Google Sheets spreadsheets batchUpdate() API endpoint to edit a chart",
             },
         },
         "required": ["chart_arg"],
@@ -180,6 +180,7 @@ claude_edit_chart_tool = {
 claude_edit_chart_sys_message = """You are an expert assistant using Google Sheets through the Google Sheets API.
 Given the specifications to edit a chart using the Google Sheets API's spreadsheets updateChartSpec batchUpdate() endpoint,
 return the correct updateChartSpec argument to pass to the API as one request to edit a graph or chart based on the given specifications.
+The updateChartSpec argument should have every necessary parameter set, such as the title and sources, set default values from the existing chart spec for anything you need.
 If sheet content data is given in user message, use it. Do not create a new chart, use the given chart data to edit it instead.
 """
 
