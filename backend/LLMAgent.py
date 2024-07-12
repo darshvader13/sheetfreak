@@ -158,15 +158,27 @@ class LLMAgent:
         print(response_body['content'])
         return response_body['content']
 
-    def get_instruction_args(self, tool_name, task, sheet_content, sheet_id, args_names, messages, prev_response, prev_response_error, table_agent):
+    def get_instruction_args(self, input):
         """Gets instructions arguments.
         Returns success bool, error message, and args.
         """
+        tool_name = input["tool_name"]
+        task = input["task"]
+        sheet_range = input["sheet_range"]
+        table_agent = input["table_agent"]
+        sheet_content = table_agent.get_sheet_content(sheet_range)
+        args_names = input["args_names"]
+        messages = input["messages"]
+        prev_response = input["prev_response"]
+        prev_response_error = input["prev_response_error"]
+
         user_msg = "Table:\n" + sheet_content + f"\nEnd Table.\nInstructions:\n{task}"
-        if "chart" in tool_name:
+        if tool_name == "create_chart" or tool_name == "edit_chart":
+            sheet_id = table_agent.get_sheet_id(sheet_range)
             user_msg += " The sheet id is: " + str(sheet_id)
-        if "edit" in tool_name:
-            user_msg += " The sheet chart content is: " + str(table_agent.get_sheets_states())
+        if tool_name == "edit_chart":
+            sheet_charts = table_agent.get_sheet_charts(sheet_range)
+            user_msg += " The sheet chart content is: " + str(sheet_charts)
         if prev_response:
             user_msg += f"\nYour previous response was {prev_response} which resulted in an error."
         if prev_response_error:
@@ -261,8 +273,6 @@ class LLMAgent:
         try:
             table_agent = TableAgent(spreadsheet_id)
             sheet_range = table_agent.get_sheets_names()[0]
-            sheet_id = table_agent.get_sheets_ids()[0]
-            sheet_content = table_agent.get_sheet_content(sheet_range)
 
             yield get_chunk_to_yield("Finished reading in data...")
         except:
@@ -280,7 +290,17 @@ class LLMAgent:
         for attempt_num in range(1, self.max_attempts+1):
             try:
                 print(f"Attempt {attempt_num} of get_instructions")
-                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, sheet_id, self.get_arg_names("get_instructions"), messages, prev_response, prev_response_error, table_agent)
+                get_instruction_args_input = {
+                    "tool_name": "get_instructions",
+                    "task": task_prompt,
+                    "sheet_range": sheet_range,
+                    "table_agent": table_agent,
+                    "args_names": self.get_arg_names("get_instructions"),
+                    "messages": messages,
+                    "prev_response": prev_response,
+                    "prev_response_error": prev_response_error
+                }
+                success, error_msg, args = self.get_instruction_args(get_instruction_args_input)
                 if not success:
                     assert(type(error_msg) == type(args) == str)
                     prev_response = args
@@ -332,7 +352,17 @@ class LLMAgent:
                         print("Unrecognized instruction type")
                         break
                     
-                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, sheet_id, self.get_arg_names(instruction_type), messages, prev_response, prev_response_error, table_agent)
+                    get_instruction_args_input = {
+                        "tool_name": instruction_type_to_tool_name[instruction_type],
+                        "task": instruction_command,
+                        "sheet_range": sheet_range,
+                        "table_agent": table_agent,
+                        "args_names": self.get_arg_names(instruction_type),
+                        "messages": messages,
+                        "prev_response": prev_response,
+                        "prev_response_error": prev_response_error
+                    }
+                    success, error_msg, args = self.get_instruction_args(get_instruction_args_input)
                     if not success:
                         assert(type(error_msg) == type(args) == str)
                         prev_response = args
@@ -357,7 +387,6 @@ class LLMAgent:
                         continue
                     if instruction_type == "WRITE":
                         need_to_push_sheet_content = True
-                        sheet_content = table_agent.get_sheet_content_current()
                     yield get_chunk_to_yield(result)
                     messages = self.add_assistant_message(messages, result)
                     failed_all_attempts = False

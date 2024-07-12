@@ -14,8 +14,10 @@ class TableAgent:
     def __init__(self, spreadsheet_id = -1):
         self.spreadsheet_id = spreadsheet_id
         self.sheets_names = []
-        self.sheets_ids= []
+        self.sheet_id = None
         self.sheet_content = None
+        self.loaded_sheet_content = False
+        self.sheet_charts = None
         creds_json = json.loads(os.environ["GOOGLE_CREDS_CRICK"])
         creds = Credentials(creds_json['token'],
                         refresh_token=creds_json['refresh_token'],
@@ -91,8 +93,10 @@ class TableAgent:
         share_link = file.get('webViewLink')
         return share_link
 
-    def get_sheet_content(self, sheet_range):
-        """Gets content of sheet ID"""
+    def get_sheet_content(self, sheet_range, refresh=False):
+        """Gets content of sheet ID, if refresh=True then retrieve the sheet content again"""
+        if not refresh and self.loaded_sheet_content:
+            return self.sheet_content.to_string()
         if not self.sheets_names:
             print("No sheets found!")
             return
@@ -108,28 +112,39 @@ class TableAgent:
         sheet_content = pd.DataFrame(sheet_content)
         sheet_content = sheet_content.replace({np.NaN: None})
         self.sheet_content = sheet_content
+        self.loaded_sheet_content = True
         print("Read values:\n", sheet_content.to_string())
         return sheet_content.to_string()
     
-    def get_sheet_content_current(self):
-        """Gets sheet content without reading sheet"""
-        return self.sheet_content.to_string()
-    
-    def get_sheets_names(self):
-        """Gets sheet names"""
+    def get_sheets_names(self, refresh=False):
+        """Gets sheets names, if refresh=True then retrieve sheets names again"""
+        if not refresh and self.sheets_names:
+            return self.sheets_names
         self.sheets_names = [s['properties']['title'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
         print("Found sheets names:", self.sheets_names)
         return self.sheets_names
     
-    def get_sheets_ids(self):
-        """Gets sheet ids"""
-        self.sheets_ids = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
-        print("Found sheets ids:", self.sheets_ids)
-        return self.sheets_ids
+    def get_sheet_id(self, sheet_range, refresh=False):
+        """Gets sheet id, if refresh=True then retrieve sheet id again"""
+        if not refresh and self.sheet_id:
+            return self.sheet_id
+        sheet = self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id, ranges=[sheet_range]).execute()['sheets'][0]
+        self.sheet_id = sheet['properties']['sheetId']
+        print("Found sheet id:", self.sheet_id)
+        return self.sheet_id
     
-    def get_sheets_states(self):
-        return self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets'][0]['charts']
-
+    def get_sheet_charts(self, sheet_range, refresh=False):
+        """Gets sheet charts, if refresh=True then retrieve sheets charts again"""
+        if not refresh and self.sheet_charts:
+            return self.sheet_charts
+        sheet = self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id, ranges=[sheet_range]).execute()['sheets'][0]
+        if 'charts' in sheet:
+            self.sheet_charts = sheet['charts']
+            print("Found sheet charts:", self.sheet_charts)
+        else:
+            print("No sheet charts found")
+        return self.sheet_charts
+    
     def push_sheet_content(self, sheet_range):
         """Writes sheet content back to online Google Sheets file"""
         try:

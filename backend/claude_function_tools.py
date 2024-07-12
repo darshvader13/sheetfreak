@@ -163,14 +163,14 @@ If sheetID is given in user message, use it. Set default values for any other pa
 Use titles, labels, and legends unless specified not to. """
 
 claude_edit_chart_tool = {
-    "name": "create_chart",
-    "description": "Create a chart based on the given specifications",
+    "name": "edit_chart",
+    "description": "Edit a chart based on the given specifications",
     "input_schema": {
         "type": "object",
         "properties": {
             "chart_arg": {
                 "type": "string",
-                "description": "The argument to pass to the Google Sheets spreadsheets batchUpdate() API endpoint to edit a chart",
+                "description": "The updateChartSpec argument to pass as a request to the Google Sheets spreadsheets batchUpdate() API endpoint to edit a chart",
             },
         },
         "required": ["chart_arg"],
@@ -178,8 +178,8 @@ claude_edit_chart_tool = {
 }
 
 claude_edit_chart_sys_message = """You are an expert assistant using Google Sheets through the Google Sheets API.
-Given the specifications to make a graph using the Google Sheets API's spreadsheets addChart batchUpdate() endpoint,
-return the correct argument to pass to the API to edit a graph or chart based on the given specifications.
+Given the specifications to edit a chart using the Google Sheets API's spreadsheets updateChartSpec batchUpdate() endpoint,
+return the correct updateChartSpec argument to pass to the API as one request to edit a graph or chart based on the given specifications.
 If sheet content data is given in user message, use it. Do not create a new chart, use the given chart data to edit it instead.
 """
 
