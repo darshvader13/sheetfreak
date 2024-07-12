@@ -230,6 +230,12 @@ class TableAgent:
         create_chart_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheet_id, body=req).execute()
         print("Finished operation", create_chart_response)
     
+    def edit_chart(self, req):
+        """Edits a chart"""
+        print("Editing chart with", req)
+        edit_chart_response = self.sheets_service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheet_id, body=req).execute()
+        print("Finished operation", edit_chart_response)
+    
     def other_instruction(self, args):
         """Performs other instruction via spreadsheets.batchUpdate()"""
         print("Executing other instruction with", args)
@@ -253,6 +259,10 @@ class TableAgent:
                 chart_req = {"requests": [json.loads(args[0])]}
                 self.create_chart(chart_req)
                 return True, "", "Created chart"
+            elif instruction_type == "EDIT":
+                chart_req = {"requests": [json.loads(args[0])]}
+                self.edit_chart(chart_req)
+                return True, "", "Edited chart"
             elif instruction_type == "QUESTION":
                 return True, "", args[0]
             elif instruction_type == "OTHER":
