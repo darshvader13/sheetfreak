@@ -11,9 +11,10 @@ from googleapiclient.http import MediaIoBaseUpload
 
 class TableAgent:
     """TableAgent is the agent responsible for manipulating the underlying table"""
-    def __init__(self, sheet_id = -1):
-        self.spreadsheet_id = sheet_id
-        self.sheets = []
+    def __init__(self, spreadsheet_id = -1):
+        self.spreadsheet_id = spreadsheet_id
+        self.sheets_names = []
+        self.sheets_ids= []
         self.sheet_content = None
         creds_json = json.loads(os.environ["GOOGLE_CREDS_CRICK"])
         creds = Credentials(creds_json['token'],
@@ -46,7 +47,7 @@ class TableAgent:
 
         copied_sheet_id = copied_sheet.get("id")
         self.spreadsheet_id = copied_sheet_id
-        self.sheets = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
+        self.sheets_ids = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
         print("Copied sheet ID:", copied_sheet_id)
         
         permission = {
@@ -79,7 +80,7 @@ class TableAgent:
 
         sheet = self.drive_service.files().create(body=file_metadata, media_body=media).execute()
         self.spreadsheet_id = sheet["id"]
-        self.sheets = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
+        self.sheets_ids = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
 
         permission = {
             'type': 'anyone',
@@ -116,13 +117,15 @@ class TableAgent:
     
     def get_sheets_names(self):
         """Gets sheet names"""
-        self.sheets = [s['properties']['title'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
-        print("Found sheets:", self.sheets)
-        return self.sheets
+        self.sheets_names = [s['properties']['title'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
+        print("Found sheets names:", self.sheets_names)
+        return self.sheets_names
     
-    def get_sheets_names_current(self):
-        """Gets sheet names without reading sheet"""
-        return self.sheets
+    def get_sheets_ids(self):
+        """Gets sheet ids"""
+        self.sheets_ids = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
+        print("Found sheets ids:", self.sheets_ids)
+        return self.sheets_ids
 
     def push_sheet_content(self, sheet_range):
         """Writes sheet content back to online Google Sheets file"""

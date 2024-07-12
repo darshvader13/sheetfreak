@@ -52,7 +52,7 @@ export default function Act() {
             },
             body: JSON.stringify({
               task_prompt: inputMessage,
-              sheet_id: sheetsId,
+              spreadsheet_id: sheetsId,
               messages: messages,
             })
         })

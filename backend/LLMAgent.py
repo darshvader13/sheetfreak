@@ -156,7 +156,7 @@ class LLMAgent:
         print(response_body['content'])
         return response_body['content']
 
-    def get_instruction_args(self, tool_name, task, sheet_content, sheet_range, args_names, messages, prev_response, prev_response_error):
+    def get_instruction_args(self, tool_name, task, sheet_content, sheet_id, args_names, messages, prev_response, prev_response_error):
         """Gets instructions arguments.
         Returns success bool, error message, and args.
         """
@@ -200,7 +200,7 @@ class LLMAgent:
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
             if "chart" in tool_name:
-                user_msg += " The sheet id is: " + sheet_range
+                user_msg += " The sheet id is: " + str(sheet_id)
             claude_response = self.call_claude(model_ID, user_msg, tool_name, messages)
             args_collection = {}
             for item in claude_response:
@@ -248,11 +248,12 @@ class LLMAgent:
         elif instruction_type == "OTHER":
             return ["body"]
     
-    def act_streamer(self, task_prompt: str, sheet_id: str, messages: list):
+    def act_streamer(self, task_prompt: str, spreadsheet_id: str, messages: list):
         """Attempts to complete given task prompt and streams outputs"""
         try:
-            table_agent = TableAgent(sheet_id)
+            table_agent = TableAgent(spreadsheet_id)
             sheet_range = table_agent.get_sheets_names()[0]
+            sheet_id = table_agent.get_sheets_names()[0]
             sheet_content = table_agent.get_sheet_content(sheet_range)
 
             yield get_chunk_to_yield("Finished reading in data...")
@@ -271,7 +272,7 @@ class LLMAgent:
         for attempt_num in range(1, self.max_attempts+1):
             try:
                 print(f"Attempt {attempt_num} of get_instructions")
-                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, sheet_range, self.get_arg_names("get_instructions"), messages, prev_response, prev_response_error)
+                success, error_msg, args = self.get_instruction_args("get_instructions", task_prompt, sheet_content, sheet_id, self.get_arg_names("get_instructions"), messages, prev_response, prev_response_error)
                 if not success:
                     assert(type(error_msg) == type(args) == str)
                     prev_response = args
@@ -323,7 +324,7 @@ class LLMAgent:
                         print("Unrecognized instruction type")
                         break
                     
-                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, sheet_range, self.get_arg_names(instruction_type), messages, prev_response, prev_response_error)
+                    success, error_msg, args = self.get_instruction_args(instruction_type_to_tool_name[instruction_type], instruction_command, sheet_content, sheet_id, self.get_arg_names(instruction_type), messages, prev_response, prev_response_error)
                     if not success:
                         assert(type(error_msg) == type(args) == str)
                         prev_response = args

@@ -67,19 +67,19 @@ def ingest(req: dict):
 def act(req: dict):
     """Given the task prompt and sheet ID, execute the instructions"""
     task_prompt: str = req["task_prompt"]
-    sheet_id: str = req["sheet_id"]
+    spreadsheet_id: str = req["spreadsheet_id"]
     messages: list = req["messages"]
 
     if not task_prompt:
         return "Please provide a task!"
     
-    if not sheet_id:
+    if not spreadsheet_id:
         return "No sheet ID provided"
     
     agent = LLMAgent(default_call="claude", tools_to_models={"write_table": "gpt-4o"})
 
     return StreamingResponse(
-        agent.act_streamer(task_prompt, sheet_id, messages), media_type="text/event-stream"
+        agent.act_streamer(task_prompt, spreadsheet_id, messages), media_type="text/event-stream"
     )
     
     

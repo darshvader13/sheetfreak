@@ -52,9 +52,9 @@ claude_get_instructions_sys_message = """You are an expert assistant using Googl
     The instruction types are READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
     READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
     WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
-    CHART involves creating only a basic chart (BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA). CHART also implictly reads and does not need to explicitly read values in.
+    CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in.
     QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
-    OTHER involves operations that do not fit into READ, WRITE, CHART or QUESTION operations, such as creating pivot tables or charts not listed in the CHART category (ex: pie chart). 
+    OTHER involves operations that use batchUpdate() that do not fit into READ, WRITE, CHART or QUESTION operations, such as creating pivot tables. 
     INAPPROPRIATE involves questions that are not relevant to Google Sheets at all."""
 
 claude_write_table_tool = {
@@ -152,9 +152,9 @@ claude_create_chart_tool = {
 }
 
 claude_create_chart_sys_message = """You are an expert assistant using Google Sheets through the Google Sheets API.
-Given the specifications to make a graph using the Google Sheets API's spreadsheets batchUpdate() endpoint,
+Given the specifications to make a graph using the Google Sheets API's spreadsheets addChart batchUpdate() endpoint,
 return the correct argument to pass to the API to create a graph or chart based on the given specifications.
-Set default values for any other parameter you need. If sheetID is given in user message, use it."""
+If sheetID is given in user message, use it. Set default values for any other parameter you need."""
 
 claude_question_tool = {
     "name": "question",
