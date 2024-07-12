@@ -9,7 +9,7 @@ export default function Header() {
             {/* Top Navigation */}
             <div className="lg:flex lg:justify-between">
                 <div className="lg:flex lg:items-center">
-                    <Image src="/logo.png" alt="logo" height="100" width="100"/>
+                    <Image src="/big logo.png" alt="logo" height="80" width="80"/>
                     <h1 className="text-4xl font-bold text-primary tracking-tight"><Link href="/">sheetfreak</Link></h1>
                 </div>
                 <div className="lf:flex lg:justify-end space-x-2 pt-8">
