@@ -55,13 +55,9 @@ claude_get_instructions_sys_message = """You are an expert assistant using Googl
     The instruction types are READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
     READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
     WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
-<<<<<<< HEAD
     CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in. Do not use CHART for editing charts in the sheet.
-    EDIT involves editing a chart in the sheet. EDIT is only used when the user explicitly edits chart data in the sheet.
-=======
-    CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in.
     Every CHART instruction creates an individual chart so combine all operations related to each chart in one single CHART instruction.
->>>>>>> dev
+    EDIT involves editing a chart in the sheet. EDIT is only used when the user explicitly edits chart data in the sheet.
     QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
     OTHER involves operations that use batchUpdate() that do not fit into READ, WRITE, CHART or QUESTION operations, such as creating pivot tables. 
     INAPPROPRIATE involves questions that are not relevant to Google Sheets at all."""
