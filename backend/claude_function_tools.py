@@ -22,14 +22,14 @@ claude_get_instructions_tool = {
                     "type": "string",
                 },
                 "minItems": 1,
-                "maxItems": 1000,
+                "maxItems": 20,
                 "description": """One word instruction summary. Must be one of the following: READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
                 Be concise, each instruction includes all of its related sub-instructions. For example, making a single write instruction includes the implicit read instructions needed. A single instruction to make a chart includes making all aspects of the chart to desired specifications.
                 READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet.
                 WRITE involves changing and inserting cell values. You already have the necessary information to manipulate values. You already have calculated everything you need to.
-                CHART involves creating only a basic chart (BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA). CHART also implictly reads and does not need to explicitly read values in.
+                CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in.
                 QUESTION involves only questions about Google Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
-                OTHER involves Sheets operations that do not fit into READ, WRITE, CHART, or QUESTION operations, such as creating pivot tables or charts not listed in the CHART category (ex: pie chart). 
+                OTHER involves Sheets operations that do not fit into READ, WRITE, CHART, or QUESTION operations, such as creating pivot tables.
                 INAPPROPRIATE involves questions that are not relevant to Google Sheets at all. """,
             },
             "instructions": {
@@ -38,7 +38,7 @@ claude_get_instructions_tool = {
                     "type": "string",
                 },
                 "minItems": 1,
-                "maxItems": 1000,
+                "maxItems": 20,
                 "description": "One sentence low-level instruction description",
             }
         },
@@ -154,7 +154,8 @@ claude_create_chart_tool = {
 claude_create_chart_sys_message = """You are an expert assistant using Google Sheets through the Google Sheets API.
 Given the specifications to make a graph using the Google Sheets API's spreadsheets addChart batchUpdate() endpoint,
 return the correct argument to pass to the API to create a graph or chart based on the given specifications.
-If sheetID is given in user message, use it. Set default values for any other parameter you need."""
+If sheetID is given in user message, use it. Set default values for any other parameter you need.
+Use titles, labels, and legends unless specified not to. """
 
 claude_question_tool = {
     "name": "question",
