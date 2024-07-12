@@ -126,6 +126,9 @@ class TableAgent:
         self.sheets_ids = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
         print("Found sheets ids:", self.sheets_ids)
         return self.sheets_ids
+    
+    def get_sheets_states(self):
+        return self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets'][0]['charts']
 
     def push_sheet_content(self, sheet_range):
         """Writes sheet content back to online Google Sheets file"""

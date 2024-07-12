@@ -13,8 +13,8 @@ export default function Header() {
                     <h1 className="text-4xl font-bold text-primary tracking-tight"><Link href="/">sheetfreak</Link></h1>
                 </div>
                 <div className="lf:flex lg:justify-end space-x-2 pt-8">
-                    <Link href="/login" className={`${buttonVariants({ variant: "outline" })} hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-300`}>Login</Link>
-                    <Link href="/getstarted" className={`${buttonVariants({ variant: "default" })} hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-400 hover:text-black`}>Sign up</Link>
+                    <Link href="/" className={`${buttonVariants({ variant: "outline" })} hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-300`}>Login</Link>
+                    <Link href="/" className={`${buttonVariants({ variant: "default" })} hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-400 hover:text-black`}>Sign up</Link>
                 </div>
             </div>
 

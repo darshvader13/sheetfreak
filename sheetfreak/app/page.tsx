@@ -51,6 +51,8 @@ const SheetfreakLandingPage = () => {
           cells[cellId] = '@Google: i need this'
         } else if (cellId === 'C7') {
           cells[cellId] = '@Microsoft: it would take us five years to make this'
+        } else if (cellId === 'C8') {
+          cells[cellId] = '@elonmusk: I need to hire this Darsh guy ASAP'
         } else if (cellId === 'D4') {
           cells[cellId] = 'FAQ'
         } else if (cellId === 'D5') {

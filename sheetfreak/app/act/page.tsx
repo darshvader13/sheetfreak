@@ -9,12 +9,15 @@ import Link from 'next/link'
 import Header from "@/components/ui/Header"
 
 const CHUNK_DELIMITER = "--END_CHUNK--"
+const WELCOME_MESSAGE = "Welcome! I'm here to help you with your spreadsheet tasks. What would you like to do?"
 
 export default function Act() {
   const searchParams = useSearchParams()
   const sheetsUrl = searchParams.get('link') ?? ''
   const sheetsId = sheetsUrl.split('/')[5] || ''
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    { text: WELCOME_MESSAGE, sender: 'bot' }
+  ]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -45,6 +48,10 @@ export default function Act() {
         setInputMessage('')
         
         setMessages(prevMessages => [...prevMessages, { text: "Starting...", sender: 'bot' }])
+        let sent_messages = messages
+        if (messages[0].text == WELCOME_MESSAGE) {
+          sent_messages = messages.slice(1)
+        }
         const res = await fetch('/api/freak', {
             method: 'POST',
             headers: {
@@ -53,7 +60,7 @@ export default function Act() {
             body: JSON.stringify({
               task_prompt: inputMessage,
               spreadsheet_id: sheetsId,
-              messages: messages,
+              messages: sent_messages,
             })
         })
         const reader = res.body?.getReader()
