@@ -161,6 +161,8 @@ class LLMAgent:
         Returns success bool, error message, and args.
         """
         user_msg = "Table:\n" + sheet_content + f"\nEnd Table.\nInstructions:\n{task}"
+        if "chart" in tool_name:
+            user_msg += " The sheet id is: " + str(sheet_id)
         if prev_response:
             user_msg += f"\nYour previous response was {prev_response} which resulted in an error."
         if prev_response_error:
@@ -199,8 +201,6 @@ class LLMAgent:
             print("Args zipped:", instruction_args)
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
-            if "chart" in tool_name:
-                user_msg += " The sheet id is: " + str(sheet_id)
             claude_response = self.call_claude(model_ID, user_msg, tool_name, messages)
             args_collection = {}
             for item in claude_response:
@@ -253,7 +253,7 @@ class LLMAgent:
         try:
             table_agent = TableAgent(spreadsheet_id)
             sheet_range = table_agent.get_sheets_names()[0]
-            sheet_id = table_agent.get_sheets_names()[0]
+            sheet_id = table_agent.get_sheets_ids()[0]
             sheet_content = table_agent.get_sheet_content(sheet_range)
 
             yield get_chunk_to_yield("Finished reading in data...")
