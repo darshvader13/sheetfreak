@@ -199,8 +199,8 @@ class LLMAgent:
             print("Args zipped:", instruction_args)
             return True, "", instruction_args
         elif model_ID.startswith("anthropic"):
-            if "chart" in tool_name and table_agent.sheets and table_agent.sheets[0] != 0:
-                user_msg += " The sheet id is: " + str(table_agent.sheets[0])
+            if "chart" in tool_name and table_agent.get_sheets_ids():
+                user_msg += " The sheet id is: " + str(table_agent.get_sheets_ids()[0])
             claude_response = self.call_claude(model_ID, user_msg, tool_name, messages)
             args_collection = {}
             for item in claude_response:

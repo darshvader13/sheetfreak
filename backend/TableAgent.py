@@ -13,7 +13,7 @@ class TableAgent:
     """TableAgent is the agent responsible for manipulating the underlying table"""
     def __init__(self, sheet_id = -1):
         self.spreadsheet_id = sheet_id
-        self.sheets = []
+        self.sheets_ids= []
         self.sheet_content = None
         creds_json = json.loads(os.environ["GOOGLE_CREDS_CRICK"])
         creds = Credentials(creds_json['token'],
@@ -78,7 +78,7 @@ class TableAgent:
 
         sheet = self.drive_service.files().create(body=file_metadata, media_body=media).execute()
         self.spreadsheet_id = sheet["id"]
-        self.sheets = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
+        self.sheets_ids= [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
 
         permission = {
             'type': 'anyone',
@@ -101,8 +101,8 @@ class TableAgent:
         sheet_content = sheet_content.replace({np.NaN: None})
         self.sheet_content = sheet_content
         print("Read values:\n", sheet_content.to_string())
-        if not self.sheets:
-            self.sheets = [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
+        if not self.sheets_ids:
+            self.sheets_ids= [s['properties']['sheetId'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=self.spreadsheet_id).execute()['sheets']]
         return sheet_content.to_string()
     
     def get_sheet_content_current(self):
@@ -112,6 +112,10 @@ class TableAgent:
     def get_sheets_names(self, spreadsheet_id):
         """Gets sheet content without reading sheet"""
         return [s['properties']['title'] for s in self.sheets_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()['sheets']]
+
+    def get_sheets_ids(self):
+        """Gets sheet content without reading sheet"""
+        return self.sheets_ids if self.sheets_ids is not None else []
     
     def push_sheet_content(self, sheet_range):
         """Writes sheet content back to online Google Sheets file"""
