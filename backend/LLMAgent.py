@@ -193,6 +193,7 @@ class LLMAgent:
             print("Args collection:", args_collection)
             if tool_name != "get_instructions" and tool_name != "write_table" and tool_name != "read_table":
                 return True, "", args_collection
+            # Zip get_instructions, write_table, read_table args
             assert(type(args_collection[0] == list))
             instruction_args = []
             for i in range(len(args_collection[0])):
@@ -222,6 +223,7 @@ class LLMAgent:
             print(f"{tool_name} function args collected: {args_collection_list}")
             if tool_name != "get_instructions" and tool_name != "write_table" and tool_name != "read_table":
                 return True, "", args_collection_list
+            # Zip get_instructions, write_table, read_table args
             assert(type(args_collection_list[0] == list))
             instruction_args = []
             for i in range(len(args_collection_list[0])):
@@ -309,16 +311,16 @@ class LLMAgent:
         need_to_push_sheet_content = False
         for instruction in instructions:
             print("Executing", instruction)
-            yield get_chunk_to_yield(f"Executing...\n{instruction[1]}")
-            messages = self.add_assistant_message(messages, f"Executing...\n{instruction[1]}")
+            instruction_type = instruction[0]
+            instruction_command = instruction[1]
+            yield get_chunk_to_yield(f"Executing...\n{instruction_command}")
+            messages = self.add_assistant_message(messages, f"Executing...\n{instruction_command}")
 
             prev_response = None
             prev_response_error = None
             failed_all_attempts = True
             for attempt_num in range(1, self.max_attempts+1):
                 try:
-                    instruction_type = instruction[0]
-                    instruction_command = instruction[1]
                     print(f"Attempt {attempt_num} of {instruction_type}: {instruction_command}")
                     if instruction_type not in instruction_type_to_tool_name:
                         print("Unrecognized instruction type")

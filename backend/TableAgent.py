@@ -180,18 +180,15 @@ class TableAgent:
 
     def read_table(self, args):
         """Gets the table values at the specified rows and columns"""
-        rows = args[0]
-        columns = args[1]
-        
-        maxRows = max(rows)
-        maxCols = max(columns)
-        self.expand_table(maxRows, maxCols)
-        
         returned_values = []
-        n = len(rows)
-        for i in range(n):
-            returned_values.append(self.sheet_content.iloc[rows[i], columns[i]])
-        print("Read in", returned_values)
+        for read_args in args:
+            row = read_args[0]
+            col = read_args[1]
+
+            self.expand_table(row, col)
+            
+            returned_values.append(self.sheet_content.iloc[row, col])
+            print("Read in", returned_values)
         return returned_values
     
     def get_chart_req(self, args):

@@ -168,6 +168,7 @@ const SheetfreakLandingPage = () => {
             <tr>
               <th className="w-10"></th>
               {['A', 'B', 'C', 'D', 'E', 'F'].map(col => (
+                // TODO: min-w-32 ?
                 <th key={col} className="w-32 bg-muted border text-center">{col}</th>
               ))}
             </tr>
