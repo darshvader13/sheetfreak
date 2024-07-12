@@ -13,7 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <link rel="icon" type="image/png" sizes="any" href="/logo.png"/>
+      <link rel="icon" type="image/png" sizes="any" href="/big logo.png"/>
       <body>{children}</body>
     </html>
   );
