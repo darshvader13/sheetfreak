@@ -4,7 +4,7 @@ import traceback
 from TableAgent import *
 from gpt_function_tools import *
 from claude_function_tools import *
-
+import time
 from openai import OpenAI
 import boto3
 
@@ -288,6 +288,7 @@ class LLMAgent:
         prev_response_error = None
         instructions = None
         for attempt_num in range(1, self.max_attempts+1):
+            time.sleep(0.5)
             try:
                 print(f"Attempt {attempt_num} of get_instructions")
                 get_instruction_args_input = {

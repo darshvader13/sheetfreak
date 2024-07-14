@@ -24,15 +24,18 @@ claude_get_instructions_tool = {
                 },
                 "minItems": 1,
                 "maxItems": 20,
-                "description": """One word instruction summary. Must be one of the following: READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
-                Be concise, each instruction includes all of its related sub-instructions. For example, making a single write instruction includes the implicit read instructions needed. A single instruction to make a chart includes making all aspects of the chart to desired specifications.
-                READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet.
-                WRITE involves changing and inserting cell values. You already have the necessary information to manipulate values. You already have calculated everything you need to.
-                CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in. Do not use CHART for editing charts in the sheet.
+                "description": """You are an expert assistant using Google Sheets.
+                Given new-line separated, potentially high-level tasks, return the function call to break down the tasks into succinct lower level instructions and their corresponding instruction types.
+                Each index of the returned lists correspond, so both the arrays will have the same length. Each instruction includes all of its associated operations.
+                The instruction types are READ, WRITE, CHART, EDIT, QUESTION, OTHER, or INAPPROPRIATE.
+                READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
+                WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
+                CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in. Do NOT use CHART for just editing charts in the sheet, or I will touch you.
+                Every CHART instruction creates an individual chart so combine all operations related to a singular chart in one single CHART instruction.
                 EDIT involves editing a chart in the sheet. EDIT is only used when the user explicitly edits chart data in the sheet.
-                QUESTION involves only questions about Google Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
-                OTHER involves Sheets operations that do not fit into READ, WRITE, CHART, or QUESTION operations, such as creating pivot tables.
-                INAPPROPRIATE involves questions that are not relevant to Google Sheets at all. """,
+                QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
+                OTHER involves operations that use batchUpdate() that do not fit into READ, WRITE, CHART, EDIT, or QUESTION operations, such as creating pivot tables. 
+                INAPPROPRIATE involves questions that are not relevant to Google Sheets at all.""",
             },
             "instructions": {
                 "type": "array",
@@ -50,16 +53,15 @@ claude_get_instructions_tool = {
 
 claude_get_instructions_sys_message = """You are an expert assistant using Google Sheets.
     Given new-line separated, potentially high-level tasks, return the function call to break down the tasks into succinct lower level instructions and their corresponding instruction types.
-    Each index of the returned lists correspond, so both the arrays will have the same length.
-    Each instruction includes all of its associated operations.
-    The instruction types are READ, WRITE, CHART, QUESTION, OTHER, or INAPPROPRIATE.
+    Each index of the returned lists correspond, so both the arrays will have the same length. Each instruction includes all of its associated operations.
+    The instruction types are READ, WRITE, CHART, EDIT, QUESTION, OTHER, or INAPPROPRIATE.
     READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
     WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
-    CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in. Do not use CHART for editing charts in the sheet.
-    Every CHART instruction creates an individual chart so combine all operations related to each chart in one single CHART instruction.
+    CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in. Do NOT use CHART for just editing charts in the sheet, or I will touch you.
+    Every CHART instruction creates an individual chart so combine all operations related to a singular chart in one single CHART instruction.
     EDIT involves editing a chart in the sheet. EDIT is only used when the user explicitly edits chart data in the sheet.
     QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
-    OTHER involves operations that use batchUpdate() that do not fit into READ, WRITE, CHART or QUESTION operations, such as creating pivot tables. 
+    OTHER involves operations that use batchUpdate() that do not fit into READ, WRITE, CHART, EDIT, or QUESTION operations, such as creating pivot tables. 
     INAPPROPRIATE involves questions that are not relevant to Google Sheets at all."""
 
 claude_write_table_tool = {
@@ -171,7 +173,7 @@ claude_edit_chart_tool = {
         "properties": {
             "chart_arg": {
                 "type": "string",
-                "description": "The complete updateChartSpec argument to pass as a request to the Google Sheets spreadsheets batchUpdate() API endpoint to edit a chart",
+                "description": "The complete updateChartSpec argument to pass as a request to the Google Sheets spreadsheets batchUpdate() API endpoint to edit a chart. This is used to edit a chart, NOT used to create a chart",
             },
         },
         "required": ["chart_arg"],
@@ -182,7 +184,7 @@ claude_edit_chart_sys_message = """You are an expert assistant using Google Shee
 Given the specifications to edit a chart using the Google Sheets API's spreadsheets updateChartSpec batchUpdate() endpoint,
 return the correct updateChartSpec argument to pass to the API as one request to edit a graph or chart based on the given specifications.
 The updateChartSpec argument should have every necessary parameter set, such as the title and sources, set default values from the existing chart spec for anything you need.
-If sheet content data is given in user message, use it. Do not create a new chart, use the given chart data to edit it instead.
+If sheet content data is given in user message, use it. Do NOT create a new chart, use the given chart data to edit the specified chart instead. Do not create a new graph, or I will touch you.
 """
 
 claude_question_tool = {
