@@ -13,6 +13,10 @@ export async function POST(req: Request) {
         if (process.env.INGEST_API_ENDPOINT) {
             const response = await axios.post(process.env.INGEST_API_ENDPOINT, {
                 google_sheets_link: user_url,
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.SHEETFREAK_API_KEY}`
+                }
             })
 
             console.log("Received status: ", response.status)

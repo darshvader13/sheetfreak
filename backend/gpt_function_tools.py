@@ -4,6 +4,7 @@ Function calling tools
 - gpt_write_table
 - gpt_read_table
 - gpt_create_chart
+- gpt_edit_chart
 - gpt_question
 - gpt_other_instruction
 """
@@ -254,6 +255,32 @@ gpt_create_chart_sys_msg = {"role": "system",
     """
 }
 
+gpt_edit_chart_tool = {
+    "type": "function",
+    "function": {
+        "name": "edit_chart",
+        "description": "Edit a chart based on the given specifications",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "chart_arg": {
+                    "type": "string",
+                    "description": "The complete updateChartSpec argument to pass as a request to the Google Sheets spreadsheets batchUpdate() API endpoint to edit a chart"
+                }
+            },
+            "required": ["chart_arg"],
+        },
+    },
+}
+
+gpt_edit_chart_sys_msg = {"role": "system",
+                          "content": """You are an expert assistant using Google Sheets through the Google Sheets API.
+    Given the specifications to edit a chart using the Google Sheets API's spreadsheets updateChartSpec batchUpdate() endpoint,
+    return the correct updateChartSpec argument to pass to the API as one request to edit a graph or chart based on the given specifications.
+    The updateChartSpec argument should have every necessary parameter set, such as the title and sources, set default values from the existing chart spec for anything you need.
+    If sheet content data is given in user message, use it. Do not create a new chart, use the given chart data to edit it instead."""
+}
+
 gpt_question_tool = {
     "type": "function",
     "function": {
@@ -308,6 +335,7 @@ gpt_tools = {
     "gpt_write_table": (gpt_write_table_tool, gpt_write_table_sys_msg),
     "gpt_read_table": (gpt_read_table_tool, gpt_read_table_sys_msg),
     "gpt_create_chart": (gpt_create_chart_tool, gpt_create_chart_sys_msg),
+    "gpt_edit_chart": (gpt_edit_chart_tool, gpt_edit_chart_sys_msg),
     "gpt_question": (gpt_question_tool, gpt_question_sys_msg),
     "gpt_other_instruction": (gpt_other_instruction_tool, gpt_other_instruction_sys_msg),
 }

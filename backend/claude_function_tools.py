@@ -102,7 +102,8 @@ claude_write_table_tool = {
 
 claude_write_table_sys_message = """You are an expert assistant using Google Sheets.
     Given a table in a pandas dataframe representation and new-line separated instructions to write values to cells,
-    return the function call to complete the writes as if the table is a Google Sheets. 
+    return the function call to complete the writes as if the table is a Google Sheets.
+    If a cell location is specified in the spreadsheet format of column denoted by letters followed by row denoted by numbers such as A1, G2, or AB3, remember to translate this cell location into the zero-indexed row and value, namely convert the numbers to a row value by decrementing by one to be zero-indexed, and conver the letters to the column value with zero-indexed letters.
     Return three lists, one of rows to write at, one of columns to write at, and one of values to write at the corresponding positions.
     Each index of the returned lists should correspond to each instruction, so all the lists should have the same length.
     If a Google Sheets formula can be used, use the formula instead of hard-coding values or I will touch you."""

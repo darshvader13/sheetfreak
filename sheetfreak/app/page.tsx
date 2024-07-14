@@ -152,7 +152,7 @@ const SheetfreakLandingPage = () => {
     <div className="flex flex-col h-screen bg-background text-foreground">
       <Header />
       {/* Formula Bar */}
-      <div className="flex items-center p-2 bg-background border-b pt-4">
+      <div className="flex items-center p-2 bg-background border-b pt-3 pb-3">
         <div className="w-10 text-center font-bold">{activeCell}</div>
         <div className="flex-grow">
           <Input 

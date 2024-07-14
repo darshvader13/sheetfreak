@@ -23,6 +23,9 @@ export async function POST(req: Request) {
                 messages: messages,
             }, {
                 responseType: 'stream',
+                headers: {
+                    'Authorization': `Bearer ${process.env.SHEETFREAK_API_KEY}`
+                }
             })
 
             const stream = response.data
