@@ -33,20 +33,20 @@ import { buttonVariants } from "@/components/ui/button"
 export default function Header() {
     return (
         <div>
-            <div className="pt-4 px-8 bg-gradient-to-b from-emerald-300 via-teal-300">
+            <div className="bg-gradient-to-b from-emerald-300 via-teal-300 p-4 sm:p-8">
                 {/* Top Navigation */}
-                <div className="flex">
-                    <div className="flex flex-grow items-center">
+                <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center space-x-2">
                         <Image src="/big logo.png" alt="logo" height="80" width="80" />
                         <h1 className="text-4xl font-bold text-primary tracking-tight"><Link href="/">sheetfreak</Link></h1>
                     </div>
-                    <div className="space-x-2 pt-8">
+                    <div className="flex space-x-2 pt-8">
                         <Link href="/" className={`${buttonVariants({ variant: "outline" })} hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-300`}>Login</Link>
                          <Link href="/" className={`${buttonVariants({ variant: "default" })} hover:bg-gradient-to-r hover:from-emerald-300 hover:to-blue-400 hover:text-black`}>Sign up</Link>
                     </div>
                 </div>
                 {/* Spreadsheet Toolbar with Navigation Links */}
-                <div className="flex px-8 pt-4 pb-4 space-x-6">
+                <div className="flex justify-center sm:justify-start space-x-6 mt-4 sm:mt-6">
                     <Link href="/try" className="text-sm hover:underline underline-offset-4">Try</Link>
                     <Link href="/" className="text-sm hover:underline underline-offset-4">Features</Link>
                     <Link href="/" className="text-sm hover:underline underline-offset-4">Pricing</Link>
