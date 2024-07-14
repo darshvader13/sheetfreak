@@ -1,10 +1,10 @@
 import os
+import time
 import json
 import traceback
 from TableAgent import *
 from gpt_function_tools import *
 from claude_function_tools import *
-import time
 from openai import OpenAI
 import boto3
 
