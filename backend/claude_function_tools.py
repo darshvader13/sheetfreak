@@ -24,18 +24,17 @@ claude_get_instructions_tool = {
                 },
                 "minItems": 1,
                 "maxItems": 20,
-                "description": """You are an expert assistant using Google Sheets.
-                Given new-line separated, potentially high-level tasks, return the function call to break down the tasks into succinct lower level instructions and their corresponding instruction types.
-                Each index of the returned lists correspond, so both the arrays will have the same length. Each instruction includes all of its associated operations.
+                "description": """The list of instruction types.
                 The instruction types are READ, WRITE, CHART, EDIT, QUESTION, OTHER, or INAPPROPRIATE.
-                READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
-                WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
-                CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in. Do NOT use CHART for just editing charts in the sheet, or I will touch you.
+                Each instruction includes all of its associated operations. Make sure instructions that can be given in one single instruction are all collected into one single instruction.
+                READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet.
+                WRITE involves changing and inserting cell values. WRITE also implictly reads, calculates and figures out what to write and is capable of doing all associated operations.
+                CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and has the data necessary and should strictly be used to create new charts.
                 Every CHART instruction creates an individual chart so combine all operations related to a singular chart in one single CHART instruction.
-                EDIT involves editing a chart in the sheet. EDIT is only used when the user explicitly edits chart data in the sheet.
-                QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
-                OTHER involves operations that use batchUpdate() that do not fit into READ, WRITE, CHART, EDIT, or QUESTION operations, such as creating pivot tables. 
-                INAPPROPRIATE involves questions that are not relevant to Google Sheets at all.""",
+                EDIT involves editing a chart in the sheet. EDIT is only used when the user explicitly edits preexisting chart data in the sheet.
+                QUESTION involves only questions about Sheets and already has all the necessary information and context to answer questions. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data and all the necessary data is automatically given.
+                OTHER involves operations that use batchUpdate() to cover any other operations, such as creating pivot tables. 
+                INAPPROPRIATE involves questions or commands that are not relevant to Google Sheets at all.""",
             },
             "instructions": {
                 "type": "array",
@@ -44,7 +43,7 @@ claude_get_instructions_tool = {
                 },
                 "minItems": 1,
                 "maxItems": 20,
-                "description": "One sentence low-level instruction description",
+                "description": "One sentence low-level instruction description. For instructions involving cell locations such as WRITE and READ, it is helpful to give the spreadsheet cell location of the cells to read or write at denoted by letters followed by numbers.",
             }
         },
         "required": ["types", "instructions"],
@@ -53,16 +52,17 @@ claude_get_instructions_tool = {
 
 claude_get_instructions_sys_message = """You are an expert assistant using Google Sheets.
     Given new-line separated, potentially high-level tasks, return the function call to break down the tasks into succinct lower level instructions and their corresponding instruction types.
-    Each index of the returned lists correspond, so both the arrays will have the same length. Each instruction includes all of its associated operations.
+    Each index of the returned lists correspond, so both the arrays will have the same length. Each instruction includes all of its associated operations. Make sure instructions that can be given in one single instruction are all collected into one single instruction.
     The instruction types are READ, WRITE, CHART, EDIT, QUESTION, OTHER, or INAPPROPRIATE.
-    READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet. Do not READ just for writes, or I will touch you.
-    WRITE involves changing and inserting cell values. WRITE also implictly reads and does not need to explicitly read values in.
-    CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and does not need to explicitly read values in. Do NOT use CHART for just editing charts in the sheet, or I will touch you.
+    For instructions involving cell locations such as READ and WRITE, it is helpful to give the cell locations to perform the operation at by the spreadsheet cell location of the cells denoted by letters followed by numbers.
+    READ involes only reading/getting cell values. READ is only used when the user specifically requests data in the sheet.
+    WRITE involves changing and inserting cell values. WRITE also implictly reads, calculates and figures out what to write and is capable of doing all associated operations.
+    CHART involves creating a basic chart (Enums: BAR, LINE, AREA, COLUMN, SCATTER, COMBO, or STEPPED_AREA) or more advanced graphs (pie, bubble, candlestick, org, histogram, treemap, waterfall, scorecard). CHART also implictly reads and has the data necessary and should strictly be used to create new charts.
     Every CHART instruction creates an individual chart so combine all operations related to a singular chart in one single CHART instruction.
-    EDIT involves editing a chart in the sheet. EDIT is only used when the user explicitly edits chart data in the sheet.
-    QUESTION involves only questions about Sheets that do not require READ, WRITE, or CHART operations. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data.
-    OTHER involves operations that use batchUpdate() that do not fit into READ, WRITE, CHART, EDIT, or QUESTION operations, such as creating pivot tables. 
-    INAPPROPRIATE involves questions that are not relevant to Google Sheets at all."""
+    EDIT involves editing a chart in the sheet. EDIT is only used when the user explicitly edits preexisting chart data in the sheet.
+    QUESTION involves only questions about Sheets and already has all the necessary information and context to answer questions. QUESTION should also be used to answer questions about data in the sheet such as summarizing the data and all the necessary data is automatically given.
+    OTHER involves operations that use batchUpdate() to cover any other operations, such as creating pivot tables. 
+    INAPPROPRIATE involves questions or commands that are not relevant to Google Sheets at all."""
 
 claude_write_table_tool = {
     "name": "write_table",
@@ -77,7 +77,7 @@ claude_write_table_tool = {
                 },
                 "minItems": 1,
                 "maxItems": 1000,
-                "description": "The 0-index rows of the values to write to",
+                "description": "The 0-index rows of the values to write to. If a cell location is specified in the spreadsheet format of column denoted by letters followed by row denoted by numbers, make sure to decrement the row number by one to ensure it is zero-indexed or I will touch you.",
             },
             "list_of_columns": {
                 "type": "array",
@@ -105,10 +105,12 @@ claude_write_table_tool = {
 claude_write_table_sys_message = """You are an expert assistant using Google Sheets.
     Given a table in a pandas dataframe representation and new-line separated instructions to write values to cells,
     return the function call to complete the writes as if the table is a Google Sheets.
+    Focus only on the current, most recently given task at hand in the latest user message.
+    If a cell location is specified in the spreadsheet format of column denoted by letters followed by row denoted by numbers such as A1, G2, or AB3, remember to translate this cell location into the zero-indexed row and value, namely convert the numbers to a row value by making sure to decrement by one to be zero-indexed, and convert the letters to the column value with zero-indexed letters or I will touch you.
     Return three lists, one of rows to write at, one of columns to write at, and one of values to write at the corresponding positions.
     Each index of the returned lists should correspond to each instruction, so all the lists should have the same length.
     If a Google Sheets formula can be used correctly, use the formula instead of hard-coding values. Do not use formulas if it will cause a circular dependency.
-    If the user requests an aggregation of some values, put the value in an empty cell and do not overwrite values unless specifically requested by the user. """
+    If the user requests an aggregation of some values, put the value in an empty cell and do not overwrite values unless specifically requested by the user."""
 
 claude_read_table_tool = {
     "name": "read_table",

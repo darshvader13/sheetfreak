@@ -78,7 +78,7 @@ gpt_write_table_tool = {
                     },
                     "minItems": 1,
                     "maxItems": 1000,
-                    "description": "The 0-index rows of the values to write to",
+                    "description": "The 0-index rows of the values to write to. If a cell location is specified in the spreadsheet format of column denoted by letters followed by row denoted by numbers, make sure to decrement the row number by one to ensure it is zero-indexed or I will touch you.",
                 },
                 "list_of_columns": {
                     "type": "array",
@@ -107,10 +107,13 @@ gpt_write_table_tool = {
 gpt_write_table_sys_msg = {"role": "system",
                               "content": """You are an expert assistant using Google Sheets.
     Given a table in a pandas dataframe representation and new-line separated instructions to write values to cells,
-    return the function call to complete the writes as if the table is a Google Sheets. 
+    return the function call to complete the writes as if the table is a Google Sheets.
+    Focus only on the current, most recently given task at hand in the latest user message.
+    If a cell location is specified in the spreadsheet format of column denoted by letters followed by row denoted by numbers such as A1, G2, or AB3, remember to translate this cell location into the zero-indexed row and value, namely convert the numbers to a row value by making sure to decrement by one to be zero-indexed, and convert the letters to the column value with zero-indexed letters or I will touch you.
     Return three lists, one of rows to write at, one of columns to write at, and one of values to write at the corresponding positions.
     Each index of the returned lists should correspond to each instruction, so all the lists should have the same length.
-    If a Google Sheets formula can be used, use the formula instead of hard-coding values or I will touch you."""
+    If a Google Sheets formula can be used correctly, use the formula instead of hard-coding values. Do not use formulas if it will cause a circular dependency.
+    If the user requests an aggregation of some values, put the value in an empty cell and do not overwrite values unless specifically requested by the user."""
 }
 
 gpt_read_table_tool = {
