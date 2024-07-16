@@ -4,7 +4,7 @@ import numpy as np
 import json
 import traceback
 from io import BytesIO
-
+import string
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from googleapiclient.http import MediaIoBaseUpload
@@ -111,6 +111,8 @@ class TableAgent:
         sheet_content = read_sheet_result.get("values", [])
         sheet_content = pd.DataFrame(sheet_content)
         sheet_content = sheet_content.replace({np.NaN: None})
+        sheet_content.index = range(1, len(sheet_content) + 1)
+        sheet_content.columns = [string.ascii_uppercase[i] for i in range(len(sheet_content.columns))]
         self.sheet_content = sheet_content
         self.loaded_sheet_content = True
         print("Read values:\n", sheet_content.to_string())
@@ -180,7 +182,7 @@ class TableAgent:
             currCols = newCols+1
         if newRows >= currRows:
             for i in range(currRows, newRows + 1):
-                self.sheet_content.loc[i] = [None for _ in range(currCols)]
+                self.sheet_content.loc[i + 1] = [None for _ in range(currCols)]
         return
 
     def write_table(self, args):
