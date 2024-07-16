@@ -35,6 +35,16 @@ instruction_type_to_tool_name = {
     "OTHER": "other_instruction",
 }
 
+instruction_type_to_arg_names = {
+    "get_instructions": ["types", "instructions"],
+    "WRITE": ["list_of_rows", "list_of_columns", "list_of_values"],
+    "READ": ["rows", "columns"],
+    "CHART": ["chart_arg"],
+    "EDIT": ["chart_arg"],
+    "QUESTION": ["answer"],
+    "OTHER": ["body"]
+}
+
 # TODO: timeit measure latency of class methods
 class LLMAgent:
     """LLMAgent is the orchestrated agent responsible for making LLM calls to plan and produce instructions"""
@@ -129,7 +139,10 @@ class LLMAgent:
             "content": user_msg_content
         }
         messages = [sys_msg] + messages + [user_msg]
-        print(messages)
+        print("Messages: ") 
+        for msg in messages[-3:]:
+            print("role:", msg["role"])
+            print("content:", msg["content"][:500]) #only print first 500 characters to avoid clutter
         response = self.openai_client.chat.completions.create(
             model=model_ID,
             messages=messages,
@@ -143,7 +156,10 @@ class LLMAgent:
         """Call Claude on AWS Bedrock"""
         tool, sys_msg = claude_tools["claude_" + tool_name]
         messages = messages + [{"role": "user", "content": user_msg_content}]
-        print(messages)
+        print("Messages: ") 
+        for msg in messages[-3:]:
+            print("role:", msg["role"])
+            print("content:", msg["content"][:500]) #only print first 500 characters to avoid clutter
         body = json.dumps({
             "anthropic_version": "bedrock-2023-05-31",
             "system": sys_msg,
@@ -183,7 +199,7 @@ class LLMAgent:
             user_msg += f"\nYour previous response was {prev_response} which resulted in an error."
         if prev_response_error:
             user_msg += f"\nThe error was: {prev_response_error}"
-        print("User message:", user_msg)
+        print("User message:", user_msg[:500]) #only print first 100 characters to avoid clutter
         model_ID = self.get_model_ID(tool_name)
         print("Using model:", model_ID)
         if model_ID.startswith("gpt"):
@@ -251,22 +267,6 @@ class LLMAgent:
         else:
             print("Invalid LLM")
             return False, "Invalid LLM", ""
-
-    def get_arg_names(self, instruction_type):
-        if instruction_type == "get_instructions":
-            return ["types", "instructions"]
-        elif instruction_type == "WRITE":
-            return ["list_of_rows", "list_of_columns", "list_of_values"]
-        elif instruction_type == "READ":
-            return ["rows", "columns"]
-        elif instruction_type == "CHART":
-            return ["chart_arg"]
-        elif instruction_type == "EDIT":
-            return ["chart_arg"]
-        elif instruction_type == "QUESTION":
-            return ["answer"]
-        elif instruction_type == "OTHER":
-            return ["body"]
     
     def act_streamer(self, task_prompt: str, spreadsheet_id: str, messages: list):
         """Attempts to complete given task prompt and streams outputs"""
@@ -288,7 +288,6 @@ class LLMAgent:
         prev_response_error = None
         instructions = None
         for attempt_num in range(1, self.max_attempts+1):
-            time.sleep(0.5)
             try:
                 print(f"Attempt {attempt_num} of get_instructions")
                 get_instruction_args_input = {
@@ -296,7 +295,7 @@ class LLMAgent:
                     "task": task_prompt,
                     "sheet_range": sheet_range,
                     "table_agent": table_agent,
-                    "args_names": self.get_arg_names("get_instructions"),
+                    "args_names": instruction_type_to_arg_names["get_instructions"],
                     "messages": messages,
                     "prev_response": prev_response,
                     "prev_response_error": prev_response_error
@@ -358,7 +357,7 @@ class LLMAgent:
                         "task": instruction_command,
                         "sheet_range": sheet_range,
                         "table_agent": table_agent,
-                        "args_names": self.get_arg_names(instruction_type),
+                        "args_names": instruction_type_to_arg_names[instruction_type],
                         "messages": messages,
                         "prev_response": prev_response,
                         "prev_response_error": prev_response_error
@@ -395,6 +394,9 @@ class LLMAgent:
                 except:
                     error_details = traceback.format_exc()
                     print(f"Error: {error_details}")
+                    if "botocore.errorfactory.ThrottlingException" in error_details:
+                        print("Claude rate limited, sleeping")
+                        time.sleep(0.5) # 0.5 seconds isn't enough
                     prev_response = None
                     prev_response_error = None
                     continue

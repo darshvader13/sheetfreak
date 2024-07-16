@@ -113,7 +113,7 @@ class TableAgent:
         sheet_content = sheet_content.replace({np.NaN: None})
         self.sheet_content = sheet_content
         self.loaded_sheet_content = True
-        print("Read values:\n", sheet_content.to_string())
+        print("Read values:\n", sheet_content.to_string()[:500]) #only print first 100 characters to avoid clutter
         return sheet_content.to_string()
     
     def get_sheets_names(self, refresh=False):
