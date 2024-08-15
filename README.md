@@ -1,3 +1,3 @@
 google sheets agent capable of data entry and analysis
 
-https://sheetfreak.vercel.app
+https://www.sheetfreek.com/
